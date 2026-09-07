@@ -40,7 +40,7 @@ button{font-family:inherit;cursor:pointer}.rowadd button,.actions button,.addIte
 .archive-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 @media(max-width:700px){.archive-head{grid-template-columns:1fr 1fr}}
 @media(max-width:800px){.page{width:100%;margin:0}.paper-meta{min-width:650px}.wrap{overflow:auto}table{min-width:780px}}
-@media print{nav,.actions,.rowadd,.addItem,.toolbar{display:none!important}.preview-file{background:#fff;padding:0}.preview-page{width:100%;min-height:auto;margin:0;border:0;box-shadow:none;page-break-after:always}.preview-page:last-child{page-break-after:auto}.preview-page-label{display:none}.preview-attachment{min-height:auto}.preview-attachment img{max-height:260mm}.preview-attachment iframe{height:260mm}body{background:#fff}.page{width:100%;margin:0;box-shadow:none;border:0}.view{display:none!important}#daily.active,#archiveDetail.active{display:block!important}@page{size:A4 portrait;margin:8mm}}
+@media print{nav,.actions,.rowadd,.addItem,.toolbar{display:none!important}.preview-file{background:#fff;padding:0}.daily-page{font-size:11px}.daily-page .archive-head{gap:4px;margin-bottom:5px}.daily-page .archive-head>div{padding:5px}.daily-page .sec{padding:5px 8px;margin-top:5px}.daily-page th,.daily-page td{padding:4px}.preview-page{width:100%;min-height:auto;margin:0;border:0;box-shadow:none;page-break-after:always}.preview-page:last-child{page-break-after:auto}.preview-page-label{display:none}.preview-attachment{min-height:auto}.preview-attachment img{max-height:260mm}.preview-attachment iframe{height:260mm}body{background:#fff}.page{width:100%;margin:0;box-shadow:none;border:0}.view{display:none!important}#daily.active,#archiveDetail.active{display:block!important}@page{size:A4 portrait;margin:8mm}}
 
 #loginScreen{position:fixed;inset:0;background:#eceff2;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
 #loginBox{width:min(420px,100%);background:#fff;border:1px solid #999;box-shadow:0 8px 30px #0002;padding:22px;border-radius:8px}
@@ -335,7 +335,7 @@ function bindTableEnter(tableId, addRowFn){
   });
 }
 
-function calcSales(){let qs=0,cs=0;$$('#sales tbody tr').forEach(tr=>{let q=num(tr.querySelector('.qty').value),p=num(tr.querySelector('.price').value),t=tr.querySelector('.lineTotal');if(!t.dataset.manual)t.value=(q*p).toFixed(2);qs+=q;cs+=num(tr.querySelector('.collect').value)});qtySum.textContent=qs;collectSum.textContent=cs.toFixed(2)}
+function calcSales(){let qs=0,cs=0;$$('#sales tbody tr').forEach(tr=>{let qEl=tr.querySelector('.qty'),pEl=tr.querySelector('.price'),q=num(qEl.value),p=num(pEl.value),t=tr.querySelector('.lineTotal');if(!t.dataset.manual){t.value=(String(qEl.value).trim()===''&&String(pEl.value).trim()==='')?'':(q*p).toFixed(2)}qs+=q;cs+=num(tr.querySelector('.collect').value)});qtySum.textContent=qs;collectSum.textContent=cs.toFixed(2)}
 function calcExpenses(){expenseSum.textContent=$$('.expense').reduce((a,e)=>a+num(e.value),0).toFixed(2)}
 function calcMovement(){let rows={};$$('#movement tbody tr').forEach(r=>rows[r.dataset.k]=[...r.querySelectorAll('input')]);for(let c=0;c<rows.received.length;c++){let s=rows.sold[c];if(!s.dataset.manual)s.value=num(rows.received[c].value)+num(rows.added[c].value)-num(rows.returned[c].value)-num(rows.delivered[c].value)-num(rows.difference[c].value)}}
 $$('#movement tbody input').forEach(i=>i.addEventListener('input',calcMovement));
@@ -391,10 +391,16 @@ if(newItemNameEl)newItemNameEl.addEventListener('keydown',e=>{
   if(e.key==='Enter'){e.preventDefault();confirmAddItem()}
   if(e.key==='Escape'){e.preventDefault();cancelAddItem()}
 });
+function meaningfulSalesRow(row){
+  if(!Array.isArray(row))return false;
+  const other=[row[0],row[1],row[2],row[4],row[5],row[6]].some(v=>String(v??'').trim()!=='');
+  const totalText=String(row[3]??'').trim();
+  return other || (totalText!=='' && Number(totalText)!==0);
+}
 function tableData(id){
-  return $$('#'+id+' tbody tr')
-    .map(r=>[...r.querySelectorAll('input')].map(i=>i.value))
-    .filter(row=>row.some(v=>String(v).trim()!==''));
+  const rows=$$('#'+id+' tbody tr').map(r=>[...r.querySelectorAll('input')].map(i=>i.value));
+  if(id==='sales')return rows.filter(meaningfulSalesRow);
+  return rows.filter(row=>row.some(v=>String(v).trim()!==''));
 }
 function movementData(){let names=$$('#movement thead th').slice(1).map(x=>x.textContent);let rows={};$$('#movement tbody tr').forEach(r=>rows[r.dataset.k]=[...r.querySelectorAll('input')].map(i=>({v:i.value,manual:!!i.dataset.manual})));return {names,rows}}
 function fileData(){
@@ -507,8 +513,8 @@ function newDaily(){
   const expBody=document.querySelector('#expenses tbody');
   if(salesBody)salesBody.innerHTML='';
   if(expBody)expBody.innerHTML='';
-  for(let i=0;i<6;i++)addSale();
-  for(let i=0;i<4;i++)addExpense();
+  addSale();
+  addExpense();
 
   // Reset attachments
   const filesEl=document.getElementById('files');
@@ -549,7 +555,7 @@ function clearDBFilters(){
 function salesRows(){
   let db=JSON.parse(localStorage.getItem(KEY)||'[]'), rows=[];
   db.forEach(r=>(r.sales||[]).forEach(s=>{
-    if(!s.some(v=>String(v||'').trim()!==''))return;
+    if(!meaningfulSalesRow(s))return;
     rows.push({
       id:r.id,date:r.date||'',rep:r.rep||'',line:rows.length,item:s[0]||'',qty:s[1]||'',price:s[2]||'',
       total:s[3]||'',invoice:s[4]||'',collection:s[5]||'',customer:s[6]||''
@@ -661,7 +667,7 @@ function movementView(r){
 function viewRec(id){
   if(id!=='__CURRENT_PREVIEW__')previewOrigin='archive';
   let r=getRec(id);if(!r)return;
-  let sales=(r.sales||[]).filter(x=>x.some(v=>String(v||'').trim()!=='')).map(x=>`<tr>${x.map(v=>`<td>${v||''}</td>`).join('')}</tr>`).join('');
+  let sales=(r.sales||[]).filter(meaningfulSalesRow).map(x=>`<tr>${x.map(v=>`<td>${v||''}</td>`).join('')}</tr>`).join('');
   let ex=(r.expenses||[]).filter(x=>x.some(v=>String(v||'').trim()!=='')).map(x=>`<tr>${x.map(v=>`<td>${v||''}</td>`).join('')}</tr>`).join('');
   let attachmentPages=(r.attachments||[]).map((f,i)=>{
     let isImg=(f.type||'').startsWith('image/');
@@ -674,8 +680,9 @@ function viewRec(id){
       <div class="preview-attachment">${body}</div>
     </section>`;
   }).join('');
-  let qty=(r.sales||[]).reduce((a,x)=>a+num(x[1]),0);
-  let collection=(r.sales||[]).reduce((a,x)=>a+num(x[5]),0);
+  let cleanSales=(r.sales||[]).filter(meaningfulSalesRow);
+  let qty=cleanSales.reduce((a,x)=>a+num(x[1]),0);
+  let collection=cleanSales.reduce((a,x)=>a+num(x[5]),0);
   let exp=(r.expenses||[]).reduce((a,x)=>a+num(x[2]),0);
   detail.innerHTML=`<div class="preview-file"><section class="preview-page daily-page"><div class="preview-page-label">صفحة 1 — اليومية</div>
     <div class="archive-head">
@@ -687,7 +694,6 @@ function viewRec(id){
       <div><b>مبلغ إقفال الصندوق</b>${r.closeAmount||''}</div>
       <div><b>إجمالي العدد</b>${qty}</div>
       <div><b>إجمالي التحصيل</b>${collection.toFixed(2)}</div>
-      <div><b>آخر تحديث</b>${fmtUpdate(r.savedAt)}</div>
     </div>
     ${movementView(r)}
     <div class="sec">المبيعات والآجل</div>
@@ -810,7 +816,7 @@ function deleteSavedAttachment(index){
   renderSavedAttachments(rec);
 }
 
-function editRec(id){let r=getRec(id);if(!r)return;editingId=id;dailyDirty=false;day.value=r.day||'';date.value=r.date||'';rep.value=r.rep||'';openAmount.value=r.openAmount||'';closeAmount.value=r.closeAmount||'';savedAttachmentMark.style.display=(r.attachments||[]).length?'inline-block':'none';files.value='';renderSavedAttachments(r);restoreMovement(r.movement);$('#sales tbody').innerHTML='';(r.sales||[]).forEach(addSale);$('#expenses tbody').innerHTML='';(r.expenses||[]).forEach(addExpense);calcSales();calcExpenses();show('daily')}
+function editRec(id){let r=getRec(id);if(!r)return;editingId=id;dailyDirty=false;day.value=r.day||'';date.value=r.date||'';rep.value=r.rep||'';openAmount.value=r.openAmount||'';closeAmount.value=r.closeAmount||'';savedAttachmentMark.style.display=(r.attachments||[]).length?'inline-block':'none';files.value='';renderSavedAttachments(r);restoreMovement(r.movement);$('#sales tbody').innerHTML='';let sr=(r.sales||[]).filter(meaningfulSalesRow);if(sr.length)sr.forEach(addSale);else addSale();$('#expenses tbody').innerHTML='';let er=(r.expenses||[]).filter(x=>x.some(v=>String(v??'').trim()!==''));if(er.length)er.forEach(addExpense);else addExpense();calcSales();calcExpenses();show('daily')}
 newDaily();
 checkLogin().then(ok=>{if(ok)syncFromServer();});
 </script></body></html>
