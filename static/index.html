@@ -49,15 +49,93 @@ button{font-family:inherit;cursor:pointer}.rowadd button,.actions button,.addIte
 #loginBox button{width:100%;padding:11px;border:0;border-radius:5px;background:#198754;color:#fff;font-weight:bold}
 #loginError{color:#b00020;min-height:22px;text-align:center;margin-top:8px}
 .userbar{display:flex;align-items:center;gap:8px;margin-right:auto}.userbar span{font-size:13px}.userbar button{padding:6px 10px}
-</style></head><body>
+
+.mobile-only{display:none}
+@media(max-width:800px){
+ nav{display:none!important}.page{width:100%;margin:0;border:0;box-shadow:none}
+ #database,#archive{display:none!important}#home.active{display:none!important}
+ #mobileHome.active{display:block!important}.mobile-only{display:block}
+ .mobile-shell{min-height:100vh;padding:18px 16px 30px;background:#f7fbff}
+ .mobile-brand{text-align:center;padding:10px 0 18px}.mobile-brand h1{margin:0;color:#10264a;font-size:29px}
+ .m-user,.m-status,.m-card{border-radius:18px;background:#fff;border:1px solid #d9e7f5;padding:18px;margin-bottom:14px}
+ .m-status{text-align:center}.m-status.ok{background:#eaf9ef;color:#087a3e}.m-status.wait{background:#fff2f2;color:#b42318}
+ .m-status b,.m-status strong{display:block;font-size:22px;margin:5px}
+ .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.m-card{text-align:center}.m-card strong{display:block;font-size:27px}
+ .m-open,.m-private{width:100%;padding:17px;margin:0 0 12px;border-radius:16px;font:inherit;font-size:19px;font-weight:bold}
+ .m-open{background:#0969da;color:white;border:0}.m-private{background:white;border:1px solid #c9d9ea}
+ #daily .paper-meta{min-width:0!important}#daily #movement,#daily #sales,#daily #expenses{min-width:760px}
+ #daily .btns{display:grid;grid-template-columns:1fr 1fr}.mobile-share{display:inline-block!important}
+}
+
+/* Mobile-device mode: independent of viewport width so iPhone landscape still uses mobile UI */
+html.mobile-device nav{display:none!important}
+html.mobile-device .page{width:100%;margin:0;border:0;box-shadow:none}
+html.mobile-device #database,
+html.mobile-device #archive{display:none!important}
+html.mobile-device #home.active{display:none!important}
+html.mobile-device #mobileHome.active{display:block!important}
+html.mobile-device .mobile-only{display:block}
+html.mobile-device .mobile-shell{min-height:100vh;padding:18px 16px 30px;background:#f7fbff}
+html.mobile-device .mobile-brand{text-align:center;padding:10px 0 18px}
+html.mobile-device .mobile-brand h1{margin:0;color:#10264a;font-size:29px}
+html.mobile-device .m-user,
+html.mobile-device .m-status,
+html.mobile-device .m-card{border-radius:18px;background:#fff;border:1px solid #d9e7f5;padding:18px;margin-bottom:14px}
+html.mobile-device .m-status{text-align:center}
+html.mobile-device .m-status.ok{background:#eaf9ef;color:#087a3e}
+html.mobile-device .m-status.wait{background:#fff2f2;color:#b42318}
+html.mobile-device .m-status b,
+html.mobile-device .m-status strong{display:block;font-size:22px;margin:5px}
+html.mobile-device .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html.mobile-device .m-card{text-align:center}
+html.mobile-device .m-card strong{display:block;font-size:27px}
+html.mobile-device .m-open,
+html.mobile-device .m-private{width:100%;padding:17px;margin:0 0 12px;border-radius:16px;font:inherit;font-size:19px;font-weight:bold}
+html.mobile-device .m-open{background:#0969da;color:white;border:0}
+html.mobile-device .m-private{background:white;border:1px solid #c9d9ea}
+html.mobile-device #daily .paper-meta{min-width:0!important}
+html.mobile-device #daily #movement,
+html.mobile-device #daily #sales,
+html.mobile-device #daily #expenses{min-width:760px}
+html.mobile-device #daily .btns{display:grid;grid-template-columns:1fr 1fr}
+html.mobile-device .mobile-share{display:inline-block!important}
+@media(max-width:520px){
+  html.mobile-device .m-grid{grid-template-columns:1fr}
+}
+
+</style><script>
+(function(){
+  const ua=navigator.userAgent||'';
+  const appleMobile=/iPhone|iPad|iPod/i.test(ua) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const android=/Android/i.test(ua);
+  const coarse=window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+  const smallScreen=Math.min(screen.width||9999,screen.height||9999)<=820;
+  if(appleMobile || android || (coarse && smallScreen)){
+    document.documentElement.classList.add('mobile-device');
+  }
+})();
+</script></head><body>
 <div id="loginScreen"><div id="loginBox"><h2>دخول نظام اليومية</h2><label>اسم المستخدم</label><input id="loginUser" autocomplete="username"><label>كلمة المرور</label><input id="loginPass" type="password" autocomplete="current-password"><button onclick="loginNow()">دخول</button><div id="loginError"></div></div></div>
 <nav><button onclick="show('home');renderHome()">الرئيسية</button><button onclick="show('daily')">اليومية</button><button onclick="show('database');renderDB()">قاعدة البيانات</button><button onclick="show('archive');renderArchive()">أرشيف اليوميات</button><div class="userbar"><span id="whoami"></span><button onclick="changeMyPassword()">تغيير كلمة المرور</button><button onclick="logoutNow()">خروج</button></div></nav>
 
+
+<div id="mobileHome" class="view page mobile-only"><div class="mobile-shell">
+<div class="mobile-brand"><h1>توزيع الدواجن</h1><small>نظام اليومية</small></div>
+<div class="m-user">مرحباً <span id="mUser">—</span></div>
+<div id="mStatus" class="m-status wait"><b>حالة اليومية</b><strong id="mStatusText">لم يتم رفع اليومية</strong></div>
+<div class="m-grid">
+<div class="m-card"><b>إجمالي عدد المبيعات</b><strong id="mQty">0</strong><small id="mQtyDate">—</small></div>
+<div class="m-card"><b>متوقع تحصيل اليومية القادمة</b><strong id="mExpected">0.00</strong><small>ريال</small></div>
+</div>
+<button class="m-open" onclick="show('daily')">فتح اليومية</button>
+<button class="m-private" onclick="openPrivateExpenses()">المصروفات الخاصة</button>
+</div></div>
 <div id="home" class="view page">
 <div class="sec">الرئيسية — ملخص اليوميات</div>
 <div class="home-grid">
 
-<div class="home-box"><b>إجمالي عدد مبيعات آخر يومية</b><strong id="hQty">0</strong></div>
+<div class="home-box"><b>إجمالي عدد مبيعات آخر يومية</b><strong id="hQty">0</strong><small id="hQtyDate" style="display:block;margin-top:6px;color:#666">—</small></div>
 <div class="home-box"><b>إجمالي تحصيل آخر يومية</b><strong id="hCollect">0.00</strong></div>
 <div class="home-box"><b>إجمالي مصروفات آخر يومية</b><strong id="hExpense">0.00</strong></div>
 <div class="home-box"><b>متوقع تحصيل اليومية القادمة</b><strong id="hExpectedNext">0.00</strong></div>
@@ -107,7 +185,7 @@ button{font-family:inherit;cursor:pointer}.rowadd button,.actions button,.addIte
 <div class="rowadd"><button onclick="addExpense()">+ إضافة سطر</button></div></div>
 
 <div class="actions"><div class="attach"><b>إضافة صورة أو ملف (اختياري)</b> <span id="savedAttachmentMark" class="attachment-badge" style="display:none" title="يوجد مرفق محفوظ">📎</span><br><br><input id="files" type="file" multiple><div id="fileNames"></div></div>
-<div class="btns"><button class="blue" onclick="previewCurrentDaily()">معاينة اليومية</button><button class="green" onclick="saveDaily()">حفظ اليومية</button><button onclick="newDaily()">يومية جديدة</button></div></div>
+<div class="btns"><button class="blue" onclick="previewCurrentDaily()">معاينة اليومية</button><button class="green" onclick="saveDaily()">حفظ اليومية</button><button class="mobile-share" style="display:none" onclick="previewCurrentDaily();setTimeout(()=>printPreview(),250)">مشاركة / PDF</button><button onclick="newDaily()">يومية جديدة</button></div></div>
 </div>
 
 <div id="database" class="view page"><div class="sec">قاعدة بيانات المبيعات — الجدول كامل + التاريخ والمندوب</div>
@@ -150,6 +228,17 @@ button{font-family:inherit;cursor:pointer}.rowadd button,.actions button,.addIte
 <button onclick="backFromPreview()">رجوع</button>
 </div></div>
 
+
+<div id="privateExpenseModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9000;padding:18px;align-items:center;justify-content:center">
+<div style="width:min(520px,100%);background:#fff;border-radius:14px;padding:18px">
+<h3>إضافة مصروف خاص</h3>
+<label>التاريخ</label><input id="peDate" type="date" style="width:100%;padding:10px;margin:5px 0 10px">
+<label>اسم / نوع المصروف</label><input id="peName" style="width:100%;padding:10px;margin:5px 0 10px">
+<label>المبلغ</label><input id="peAmount" type="number" step=".01" style="width:100%;padding:10px;margin:5px 0 10px">
+<label>الملاحظة</label><textarea id="peNote" style="width:100%;padding:10px;margin:5px 0 10px"></textarea>
+<label>المرفق (اختياري)</label><input id="peFile" type="file" style="width:100%;margin:8px 0 16px">
+<div><button onclick="savePrivateExpense()">حفظ</button> <button onclick="closePrivateExpenses()">إلغاء</button></div>
+</div></div>
 <script>
 const KEY='poultry_daily_system_v1'; let editingId=null;
 let currentUser=null;
@@ -176,7 +265,7 @@ async function loginNow(){
     const data=await res.json().catch(()=>({}));
     if(!res.ok){loginError.textContent=data.detail||'تعذر تسجيل الدخول';return;}
     currentUser=data.user;whoami.textContent=(currentUser.display_name||currentUser.username)+(currentUser.role==='admin'?' — إدارة':'');hideLogin();
-    loginPass.value='';await syncFromServer();show('home');renderHome();
+    loginPass.value='';await syncFromServer();applyDeviceHome();
   }catch(e){loginError.textContent='تعذر الاتصال بالخادم';}
 }
 async function logoutNow(){
@@ -221,6 +310,9 @@ let dailyDirty=false;
 let previewOrigin='archive';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], num=x=>Number(x||0);
 function show(id){
+  if(isMobileUI() && (id==='home' || id==='database' || id==='archive')){
+    id='mobileHome';
+  }
   const current=document.querySelector('.view.active');
   if(current && current.id==='daily' && id!=='daily' && dailyDirty){
     if(!confirm('يوجد تعديل في اليومية لم يتم حفظه. هل تريد الخروج بدون حفظ؟')) return false;
@@ -252,6 +344,7 @@ function renderHome(){
   let expectedNext=last?(last.sales||[]).reduce((a,s)=>a+num(s[3]),0):0;
   let lastExpense=last?(last.expenses||[]).reduce((a,x)=>a+num(x[2]),0):0;
   hQty.textContent=lastQty;
+  if(document.getElementById('hQtyDate'))hQtyDate.textContent=last?.date||'—';
   hCollect.textContent=lastCollection.toFixed(2);
   hExpense.textContent=lastExpense.toFixed(2);
   hExpectedNext.textContent=expectedNext.toFixed(2);
@@ -460,6 +553,7 @@ async function saveDaily(){
   savedAttachmentMark.style.display=(rec.attachments||[]).length?'inline-block':'none';
   renderSavedAttachments(rec);
   renderHome();
+  if(isMobileUI())renderMobileHome();
 
   alert(wasUpdate
     ? 'تم تحديث نفس اليومية وتسجيل تاريخ ووقت التحديث'
@@ -717,7 +811,56 @@ function downloadPrintFile(){
   nav,.actions,.toolbar,.rowadd,.addItem{display:none!important}
   .view{display:block!important}.preview-page{page-break-after:always}
   .preview-page:last-child{page-break-after:auto}
-  </style></head><body><div class="page">${content}</div></body></html>`;
+  
+/* Mobile-device mode: independent of viewport width so iPhone landscape still uses mobile UI */
+html.mobile-device nav{display:none!important}
+html.mobile-device .page{width:100%;margin:0;border:0;box-shadow:none}
+html.mobile-device #database,
+html.mobile-device #archive{display:none!important}
+html.mobile-device #home.active{display:none!important}
+html.mobile-device #mobileHome.active{display:block!important}
+html.mobile-device .mobile-only{display:block}
+html.mobile-device .mobile-shell{min-height:100vh;padding:18px 16px 30px;background:#f7fbff}
+html.mobile-device .mobile-brand{text-align:center;padding:10px 0 18px}
+html.mobile-device .mobile-brand h1{margin:0;color:#10264a;font-size:29px}
+html.mobile-device .m-user,
+html.mobile-device .m-status,
+html.mobile-device .m-card{border-radius:18px;background:#fff;border:1px solid #d9e7f5;padding:18px;margin-bottom:14px}
+html.mobile-device .m-status{text-align:center}
+html.mobile-device .m-status.ok{background:#eaf9ef;color:#087a3e}
+html.mobile-device .m-status.wait{background:#fff2f2;color:#b42318}
+html.mobile-device .m-status b,
+html.mobile-device .m-status strong{display:block;font-size:22px;margin:5px}
+html.mobile-device .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html.mobile-device .m-card{text-align:center}
+html.mobile-device .m-card strong{display:block;font-size:27px}
+html.mobile-device .m-open,
+html.mobile-device .m-private{width:100%;padding:17px;margin:0 0 12px;border-radius:16px;font:inherit;font-size:19px;font-weight:bold}
+html.mobile-device .m-open{background:#0969da;color:white;border:0}
+html.mobile-device .m-private{background:white;border:1px solid #c9d9ea}
+html.mobile-device #daily .paper-meta{min-width:0!important}
+html.mobile-device #daily #movement,
+html.mobile-device #daily #sales,
+html.mobile-device #daily #expenses{min-width:760px}
+html.mobile-device #daily .btns{display:grid;grid-template-columns:1fr 1fr}
+html.mobile-device .mobile-share{display:inline-block!important}
+@media(max-width:520px){
+  html.mobile-device .m-grid{grid-template-columns:1fr}
+}
+
+</style><script>
+(function(){
+  const ua=navigator.userAgent||'';
+  const appleMobile=/iPhone|iPad|iPod/i.test(ua) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const android=/Android/i.test(ua);
+  const coarse=window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+  const smallScreen=Math.min(screen.width||9999,screen.height||9999)<=820;
+  if(appleMobile || android || (coarse && smallScreen)){
+    document.documentElement.classList.add('mobile-device');
+  }
+})();
+</script></head><body><div class="page">${content}</div></body></html>`;
   const blob=new Blob([doc],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -817,6 +960,52 @@ function deleteSavedAttachment(index){
 }
 
 function editRec(id){let r=getRec(id);if(!r)return;editingId=id;dailyDirty=false;day.value=r.day||'';date.value=r.date||'';rep.value=r.rep||'';openAmount.value=r.openAmount||'';closeAmount.value=r.closeAmount||'';savedAttachmentMark.style.display=(r.attachments||[]).length?'inline-block':'none';files.value='';renderSavedAttachments(r);restoreMovement(r.movement);$('#sales tbody').innerHTML='';let sr=(r.sales||[]).filter(meaningfulSalesRow);if(sr.length)sr.forEach(addSale);else addSale();$('#expenses tbody').innerHTML='';let er=(r.expenses||[]).filter(x=>x.some(v=>String(v??'').trim()!==''));if(er.length)er.forEach(addExpense);else addExpense();calcSales();calcExpenses();show('daily')}
+
+const PRIVATE_EXPENSE_KEY='poultry_private_expenses_v1';
+function isMobileUI(){
+  if(document.documentElement.classList.contains('mobile-device'))return true;
+  const ua=navigator.userAgent||'';
+  return /iPhone|iPad|iPod|Android/i.test(ua) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+function currentDailyCycleDate(){let d=new Date();if(d.getHours()<18)d.setDate(d.getDate()-1);return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function renderMobileHome(){
+ if(!isMobileUI())return;
+ let db=JSON.parse(localStorage.getItem(KEY)||'[]');
+ let last=[...db].sort((a,b)=>((b.date||'').localeCompare(a.date||''))||((b.savedAt||'').localeCompare(a.savedAt||'')))[0];
+ mUser.textContent=currentUser?(currentUser.display_name||currentUser.username):'—';
+ mQty.textContent=last?(last.sales||[]).filter(meaningfulSalesRow).reduce((a,s)=>a+num(s[1]),0):0;
+ mQtyDate.textContent=last?.date||'—';
+ mExpected.textContent=(last?(last.sales||[]).filter(meaningfulSalesRow).reduce((a,s)=>a+num(s[3]),0):0).toFixed(2);
+ let raised=db.some(r=>(r.date||'')===currentDailyCycleDate());
+ mStatus.classList.toggle('ok',raised);mStatus.classList.toggle('wait',!raised);
+ mStatusText.textContent=raised?'تم رفع اليومية بنجاح':'لم يتم رفع اليومية';
+}
+function openPrivateExpenses(){peDate.value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);privateExpenseModal.style.display='flex'}
+function closePrivateExpenses(){privateExpenseModal.style.display='none'}
+function savePrivateExpense(){
+ if(!peDate.value||!peName.value.trim()||!peAmount.value){alert('أدخل التاريخ واسم المصروف والمبلغ.');return}
+ const done=(attachment)=>{let a=JSON.parse(localStorage.getItem(PRIVATE_EXPENSE_KEY)||'[]');a.push({id:'PE-'+Date.now(),date:peDate.value,name:peName.value.trim(),amount:peAmount.value,note:peNote.value.trim(),attachment,savedAt:new Date().toISOString()});localStorage.setItem(PRIVATE_EXPENSE_KEY,JSON.stringify(a));closePrivateExpenses();alert('تم حفظ المصروف الخاص بشكل مستقل عن اليومية.')}
+ let f=peFile.files[0];if(!f){done(null);return}let r=new FileReader();r.onload=()=>done({name:f.name,type:f.type,data:r.result});r.readAsDataURL(f);
+}
+function applyDeviceHome(){
+  if(isMobileUI()){
+    document.documentElement.classList.add('mobile-device');
+    show('mobileHome');
+    renderMobileHome();
+  }else{
+    show('home');
+    renderHome();
+  }
+}
+window.addEventListener('orientationchange',()=>setTimeout(()=>{
+  if(isMobileUI()){
+    document.documentElement.classList.add('mobile-device');
+    const active=document.querySelector('.view.active')?.id;
+    if(active==='home'||active==='database'||active==='archive')applyDeviceHome();
+  }
+},150));
+
 newDaily();
-checkLogin().then(ok=>{if(ok)syncFromServer();});
+checkLogin().then(async ok=>{if(ok){await syncFromServer();applyDeviceHome();}});
 </script></body></html>
