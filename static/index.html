@@ -417,15 +417,20 @@ html.mobile-device #daily .btns button{
 
 html.mobile-device #privateExpenseModal button{min-height:40px;border-radius:9px;padding:8px 12px}
 html.mobile-device #privateExpenseModal input,html.mobile-device #privateExpenseModal textarea{font-size:16px;border:1px solid #cfd8e3;border-radius:9px}
+
+/* FINAL FIX: phone home and daily are two separate screens */
+html.mobile-device #mobileHome.view:not(.active){display:none!important;}
+html.mobile-device #daily.view:not(.active){display:none!important;}
+html.mobile-device #mobileHome.view.active{display:block!important;}
+html.mobile-device #daily.view.active{display:block!important;}
+
 </style>
 <script>
 (function(){
   const ua=navigator.userAgent||'';
-  const apple=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const android=/Android/i.test(ua);
-  const coarse=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
-  const shortSide=Math.min(screen.width||9999,screen.height||9999);
-  if(apple||android||(coarse&&shortSide<=820)){document.documentElement.classList.add('mobile-device');}
+  const phone=/iPhone|iPod|Android.*Mobile|Windows Phone|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  if(phone) document.documentElement.classList.add('mobile-device');
+  else document.documentElement.classList.remove('mobile-device');
 })();
 </script>
 </head><body>
@@ -1234,9 +1239,8 @@ function editRec(id){let r=getRec(id);if(!r)return;editingId=id;dailyDirty=false
 let privateExpenses=[];
 let peExistingAttachment=null;
 function isMobileUI(){
-  if(document.documentElement.classList.contains('mobile-device'))return true;
   const ua=navigator.userAgent||'';
-  return /iPhone|iPad|iPod|Android/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  return /iPhone|iPod|Android.*Mobile|Windows Phone|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
 function currentDailyCycleStart(){
   const now=new Date();
