@@ -51,21 +51,8 @@ button{font-family:inherit;cursor:pointer}.rowadd button,.actions button,.addIte
 .userbar{display:flex;align-items:center;gap:8px;margin-right:auto}.userbar span{font-size:13px}.userbar button{padding:6px 10px}
 
 .mobile-only{display:none}
-@media(max-width:800px){
- nav{display:none!important}.page{width:100%;margin:0;border:0;box-shadow:none}
- #database,#archive{display:none!important}#home.active{display:none!important}
- #mobileHome.active{display:block!important}.mobile-only{display:block}
- .mobile-shell{min-height:100vh;padding:18px 16px 30px;background:#f7fbff}
- .mobile-brand{text-align:center;padding:10px 0 18px}.mobile-brand h1{margin:0;color:#10264a;font-size:29px}
- .m-user,.m-status,.m-card{border-radius:18px;background:#fff;border:1px solid #d9e7f5;padding:18px;margin-bottom:14px}
- .m-status{text-align:center}.m-status.ok{background:#eaf9ef;color:#087a3e}.m-status.wait{background:#fff2f2;color:#b42318}
- .m-status b,.m-status strong{display:block;font-size:22px;margin:5px}
- .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.m-card{text-align:center}.m-card strong{display:block;font-size:27px}
- .m-open,.m-private{width:100%;padding:17px;margin:0 0 12px;border-radius:16px;font:inherit;font-size:19px;font-weight:bold}
- .m-open{background:#0969da;color:white;border:0}.m-private{background:white;border:1px solid #c9d9ea}
- #daily .paper-meta{min-width:0!important}#daily #movement,#daily #sales,#daily #expenses{min-width:760px}
- #daily .btns{display:grid;grid-template-columns:1fr 1fr}.mobile-share{display:inline-block!important}
-}
+/* desktop is never switched to mobile by viewport width */
+
 
 /* ===== Mobile-only shell (desktop rules above remain unchanged) ===== */
 .mobile-daily-top{display:none}
