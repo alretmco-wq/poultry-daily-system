@@ -67,55 +67,368 @@ button{font-family:inherit;cursor:pointer}.rowadd button,.actions button,.addIte
  #daily .btns{display:grid;grid-template-columns:1fr 1fr}.mobile-share{display:inline-block!important}
 }
 
-/* Mobile-device mode: independent of viewport width so iPhone landscape still uses mobile UI */
+/* ===== Mobile-only shell (desktop rules above remain unchanged) ===== */
+.mobile-daily-top{display:none}
 html.mobile-device nav{display:none!important}
+html.mobile-device body{background:#f7fbff}
 html.mobile-device .page{width:100%;margin:0;border:0;box-shadow:none}
-html.mobile-device #database,
-html.mobile-device #archive{display:none!important}
-html.mobile-device #home.active{display:none!important}
+html.mobile-device #home,html.mobile-device #database,html.mobile-device #archive{display:none!important}
 html.mobile-device #mobileHome.active{display:block!important}
 html.mobile-device .mobile-only{display:block}
 html.mobile-device .mobile-shell{min-height:100vh;padding:18px 16px 30px;background:#f7fbff}
 html.mobile-device .mobile-brand{text-align:center;padding:10px 0 18px}
 html.mobile-device .mobile-brand h1{margin:0;color:#10264a;font-size:29px}
-html.mobile-device .m-user,
-html.mobile-device .m-status,
-html.mobile-device .m-card{border-radius:18px;background:#fff;border:1px solid #d9e7f5;padding:18px;margin-bottom:14px}
+html.mobile-device .m-user,html.mobile-device .m-status,html.mobile-device .m-card{border-radius:18px;background:#fff;border:1px solid #d9e7f5;padding:18px;margin-bottom:14px}
 html.mobile-device .m-status{text-align:center}
 html.mobile-device .m-status.ok{background:#eaf9ef;color:#087a3e}
 html.mobile-device .m-status.wait{background:#fff2f2;color:#b42318}
-html.mobile-device .m-status b,
-html.mobile-device .m-status strong{display:block;font-size:22px;margin:5px}
+html.mobile-device .m-status b,html.mobile-device .m-status strong{display:block;font-size:22px;margin:5px}
 html.mobile-device .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 html.mobile-device .m-card{text-align:center}
 html.mobile-device .m-card strong{display:block;font-size:27px}
-html.mobile-device .m-open,
-html.mobile-device .m-private{width:100%;padding:17px;margin:0 0 12px;border-radius:16px;font:inherit;font-size:19px;font-weight:bold}
-html.mobile-device .m-open{background:#0969da;color:white;border:0}
-html.mobile-device .m-private{background:white;border:1px solid #c9d9ea}
+html.mobile-device .m-card small{display:block;margin-top:5px}
+html.mobile-device .m-open,html.mobile-device .m-private{width:100%;padding:17px;margin:0 0 12px;border-radius:16px;font:inherit;font-size:19px;font-weight:bold}
+html.mobile-device .m-open{background:#0969da;color:#fff;border:0}
+html.mobile-device .m-private{background:#fff;border:1px solid #c9d9ea}
+html.mobile-device #daily{background:#fff;min-height:100vh;padding-top:62px}
+html.mobile-device #daily .mobile-daily-top{display:flex;position:fixed;top:0;right:0;left:0;height:54px;z-index:20;align-items:center;justify-content:center;background:#25384c;color:#fff;font-weight:bold;font-size:17px;box-shadow:0 2px 8px #0002}
+html.mobile-device #daily .mobile-daily-top button{position:absolute;right:10px;border:0;border-radius:8px;background:#fff;color:#25384c;padding:8px 12px;font-weight:bold}
 html.mobile-device #daily .paper-meta{min-width:0!important}
-html.mobile-device #daily #movement,
-html.mobile-device #daily #sales,
-html.mobile-device #daily #expenses{min-width:760px}
-html.mobile-device #daily .btns{display:grid;grid-template-columns:1fr 1fr}
+html.mobile-device #daily .wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+html.mobile-device #daily #movement,html.mobile-device #daily #sales,html.mobile-device #daily #expenses{min-width:760px}
+html.mobile-device #daily .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 html.mobile-device .mobile-share{display:inline-block!important}
-@media(max-width:520px){
-  html.mobile-device .m-grid{grid-template-columns:1fr}
+@media(max-width:520px){html.mobile-device .m-grid{grid-template-columns:1fr}}
+
+
+/* ===== Mobile daily entry — dedicated layout, desktop untouched ===== */
+html.mobile-device #daily{
+  padding:64px 12px 22px;
+  background:#f4f8fc;
+}
+html.mobile-device #daily .mobile-daily-top{
+  height:56px;
+  background:#25384c;
+}
+html.mobile-device #daily .mobile-daily-top button{
+  right:12px;
+  min-width:74px;
+}
+html.mobile-device #daily .paper-meta{
+  display:block;
+  background:#fff;
+  border:1px solid #d8e3ef;
+  border-radius:16px;
+  overflow:hidden;
+  margin-bottom:14px;
+  box-shadow:0 2px 10px #0000000d;
+}
+html.mobile-device #daily .paper-meta tbody,
+html.mobile-device #daily .paper-meta tr{
+  display:block;
+  width:100%;
+}
+html.mobile-device #daily .paper-meta tr{
+  padding:10px 12px;
+  border-bottom:1px solid #edf1f5;
+}
+html.mobile-device #daily .paper-meta tr:last-child{border-bottom:0}
+html.mobile-device #daily .paper-meta th,
+html.mobile-device #daily .paper-meta td{
+  display:block;
+  width:100%!important;
+  border:0;
+  height:auto;
+  text-align:right;
+}
+html.mobile-device #daily .paper-meta th{
+  background:transparent;
+  color:#526170;
+  padding:0 0 6px;
+  font-size:13px;
+}
+html.mobile-device #daily .paper-meta td input{
+  height:46px;
+  border:1px solid #ced9e5;
+  border-radius:10px;
+  padding:8px 10px;
+  background:#fff;
+  font-size:16px;
+}
+html.mobile-device #daily .sec{
+  margin:14px 0 8px;
+  padding:12px 14px;
+  border-radius:14px 14px 0 0;
+  font-size:16px;
+  min-height:46px;
+}
+html.mobile-device #daily .sec .addItem{
+  float:left;
+  margin:0;
+  padding:7px 10px;
+  border-radius:8px;
+}
+html.mobile-device #daily #newItemBox{
+  display:block;
+  clear:both;
+  margin:8px 0 0!important;
+}
+html.mobile-device #daily #newItemBox[style*="display:none"]{display:none!important}
+
+/* Movement stays a true row/column table, but compact and touch friendly */
+html.mobile-device #daily .wrap{
+  border:1px solid #d8e3ef;
+  border-radius:0 0 14px 14px;
+  background:#fff;
+  margin-bottom:14px;
+  overflow-x:auto;
+  box-shadow:0 2px 10px #0000000d;
+}
+html.mobile-device #daily #movement{
+  min-width:520px!important;
+  table-layout:fixed;
+}
+html.mobile-device #daily #movement th,
+html.mobile-device #daily #movement td{
+  height:46px;
+}
+html.mobile-device #daily #movement th{
+  font-size:13px;
+}
+html.mobile-device #daily #movement td input{
+  height:44px;
+  font-size:16px;
 }
 
-</style><script>
+/* Sales: each saved row becomes a mobile card, exact approved fields retained */
+html.mobile-device #daily #sales{
+  min-width:0!important;
+  width:100%;
+  table-layout:auto;
+}
+html.mobile-device #daily #sales thead{display:none}
+html.mobile-device #daily #sales tbody{
+  display:block;
+  padding:10px;
+}
+html.mobile-device #daily #sales tbody tr{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px 10px;
+  padding:12px;
+  margin-bottom:10px;
+  border:1px solid #dbe5ef;
+  border-radius:14px;
+  background:#fbfdff;
+}
+html.mobile-device #daily #sales tbody td{
+  display:block;
+  border:0;
+  height:auto;
+  text-align:right;
+}
+html.mobile-device #daily #sales tbody td::before{
+  content:attr(data-label);
+  display:block;
+  color:#586878;
+  font-size:12px;
+  margin:0 2px 5px;
+  font-weight:bold;
+}
+html.mobile-device #daily #sales tbody td input{
+  height:44px;
+  border:1px solid #ced9e5;
+  border-radius:9px;
+  padding:7px 9px;
+  font-size:16px;
+}
+html.mobile-device #daily #sales tfoot{
+  display:block;
+  padding:0 10px 10px;
+}
+html.mobile-device #daily #sales tfoot tr{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  background:#eef6ff;
+  border-radius:12px;
+  padding:10px;
+}
+html.mobile-device #daily #sales tfoot th,
+html.mobile-device #daily #sales tfoot td{
+  display:none;
+  border:0;
+  height:auto;
+}
+html.mobile-device #daily #sales tfoot th:first-child{
+  display:block;
+  grid-column:1/-1;
+  background:transparent;
+  padding:0 0 2px;
+}
+html.mobile-device #daily #sales #qtySum,
+html.mobile-device #daily #sales #collectSum{
+  display:block;
+  border:1px solid #d7e4f0;
+  background:#fff;
+  border-radius:9px;
+  padding:10px;
+  text-align:center;
+}
+html.mobile-device #daily #sales #qtySum::before{
+  content:"إجمالي العدد";
+  display:block;
+  font-size:12px;
+  color:#5a6978;
+  margin-bottom:4px;
+}
+html.mobile-device #daily #sales #collectSum::before{
+  content:"إجمالي التحصيل";
+  display:block;
+  font-size:12px;
+  color:#5a6978;
+  margin-bottom:4px;
+}
+html.mobile-device #daily #sales .rowadd,
+html.mobile-device #daily .rowadd{
+  padding:0 10px 12px;
+}
+html.mobile-device #daily .rowadd button{
+  width:100%;
+  min-height:44px;
+  border-radius:10px;
+}
+
+/* Expenses: separate card per row */
+html.mobile-device #daily #expenses{
+  min-width:0!important;
+  width:100%;
+  table-layout:auto;
+}
+html.mobile-device #daily #expenses thead{display:none}
+html.mobile-device #daily #expenses tbody{
+  display:block;
+  padding:10px;
+}
+html.mobile-device #daily #expenses tbody tr{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px 10px;
+  padding:12px;
+  margin-bottom:10px;
+  border:1px solid #dbe5ef;
+  border-radius:14px;
+  background:#fbfdff;
+}
+html.mobile-device #daily #expenses tbody td{
+  display:block;
+  border:0;
+  height:auto;
+  text-align:right;
+}
+html.mobile-device #daily #expenses tbody td:last-child{
+  grid-column:1/-1;
+}
+html.mobile-device #daily #expenses tbody td::before{
+  content:attr(data-label);
+  display:block;
+  color:#586878;
+  font-size:12px;
+  margin:0 2px 5px;
+  font-weight:bold;
+}
+html.mobile-device #daily #expenses tbody td input{
+  height:44px;
+  border:1px solid #ced9e5;
+  border-radius:9px;
+  padding:7px 9px;
+  font-size:16px;
+}
+html.mobile-device #daily #expenses tfoot{
+  display:block;
+  padding:0 10px 10px;
+}
+html.mobile-device #daily #expenses tfoot tr{
+  display:grid;
+  grid-template-columns:1fr;
+  background:#eef6ff;
+  border-radius:12px;
+  padding:10px;
+}
+html.mobile-device #daily #expenses tfoot th,
+html.mobile-device #daily #expenses tfoot td{
+  display:none;
+  border:0;
+  height:auto;
+}
+html.mobile-device #daily #expenses tfoot th:first-child,
+html.mobile-device #daily #expenses #expenseSum{
+  display:block;
+}
+html.mobile-device #daily #expenses tfoot th:first-child{
+  background:transparent;
+}
+html.mobile-device #daily #expenses #expenseSum{
+  border:1px solid #d7e4f0;
+  background:#fff;
+  border-radius:9px;
+  padding:10px;
+  text-align:center;
+  font-weight:bold;
+}
+
+/* Attachments and actions */
+html.mobile-device #daily .actions{
+  margin:14px 0 0;
+  padding:12px;
+  border:1px solid #d8e3ef;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 2px 10px #0000000d;
+}
+html.mobile-device #daily .attach{
+  padding:2px 0 12px;
+}
+html.mobile-device #daily .attach input[type=file]{
+  width:100%;
+  padding:10px;
+  border:1px dashed #b8c8d8;
+  border-radius:10px;
+  background:#f8fbfe;
+}
+html.mobile-device #daily .btns{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:9px!important;
+}
+html.mobile-device #daily .btns button{
+  min-height:46px;
+  border-radius:10px;
+  font-size:15px;
+}
+@media(max-width:390px){
+  html.mobile-device #daily #sales tbody tr,
+  html.mobile-device #daily #expenses tbody tr{
+    grid-template-columns:1fr;
+  }
+  html.mobile-device #daily #expenses tbody td:last-child{grid-column:auto}
+}
+
+
+html.mobile-device #privateExpenseModal button{min-height:40px;border-radius:9px;padding:8px 12px}
+html.mobile-device #privateExpenseModal input,html.mobile-device #privateExpenseModal textarea{font-size:16px;border:1px solid #cfd8e3;border-radius:9px}
+</style>
+<script>
 (function(){
   const ua=navigator.userAgent||'';
-  const appleMobile=/iPhone|iPad|iPod/i.test(ua) ||
-    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const apple=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   const android=/Android/i.test(ua);
-  const coarse=window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
-  const smallScreen=Math.min(screen.width||9999,screen.height||9999)<=820;
-  if(appleMobile || android || (coarse && smallScreen)){
-    document.documentElement.classList.add('mobile-device');
-  }
+  const coarse=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
+  const shortSide=Math.min(screen.width||9999,screen.height||9999);
+  if(apple||android||(coarse&&shortSide<=820)){document.documentElement.classList.add('mobile-device');}
 })();
-</script></head><body>
+</script>
+</head><body>
 <div id="loginScreen"><div id="loginBox"><h2>دخول نظام اليومية</h2><label>اسم المستخدم</label><input id="loginUser" autocomplete="username"><label>كلمة المرور</label><input id="loginPass" type="password" autocomplete="current-password"><button onclick="loginNow()">دخول</button><div id="loginError"></div></div></div>
 <nav><button onclick="show('home');renderHome()">الرئيسية</button><button onclick="show('daily')">اليومية</button><button onclick="show('database');renderDB()">قاعدة البيانات</button><button onclick="show('archive');renderArchive()">أرشيف اليوميات</button><div class="userbar"><span id="whoami"></span><button onclick="changeMyPassword()">تغيير كلمة المرور</button><button onclick="logoutNow()">خروج</button></div></nav>
 
@@ -128,7 +441,7 @@ html.mobile-device .mobile-share{display:inline-block!important}
 <div class="m-card"><b>إجمالي عدد المبيعات</b><strong id="mQty">0</strong><small id="mQtyDate">—</small></div>
 <div class="m-card"><b>متوقع تحصيل اليومية القادمة</b><strong id="mExpected">0.00</strong><small>ريال</small></div>
 </div>
-<button class="m-open" onclick="show('daily')">فتح اليومية</button>
+<button class="m-open" onclick="openMobileDaily()">فتح اليومية</button>
 <button class="m-private" onclick="openPrivateExpenses()">المصروفات الخاصة</button>
 </div></div>
 <div id="home" class="view page">
@@ -149,7 +462,8 @@ html.mobile-device .mobile-share{display:inline-block!important}
 </div>
 <div class="actions btns"><button class="green" onclick="openLastDailyPreview()">فتح اليومية</button><button onclick="show('database');renderDB()">قاعدة البيانات</button><button onclick="show('archive');renderArchive()">الأرشيف</button></div>
 </div>
-<div id="daily" class="view active page">
+<div id="daily" class="view page">
+<div class="mobile-daily-top"><button type="button" onclick="backToMobileHome()">الرئيسية</button><span>صفحة الإدخال اليومية</span></div>
 <table class="paper-meta">
 <tr><th>اليوم</th><td><input id="day"></td><th>التاريخ</th><td><input id="date" type="date"></td></tr>
 <tr><th>اسم المندوب</th><td colspan="3"><input id="rep"></td></tr>
@@ -229,15 +543,21 @@ html.mobile-device .mobile-share{display:inline-block!important}
 </div></div>
 
 
-<div id="privateExpenseModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9000;padding:18px;align-items:center;justify-content:center">
-<div style="width:min(520px,100%);background:#fff;border-radius:14px;padding:18px">
-<h3>إضافة مصروف خاص</h3>
+<div id="privateExpenseModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9000;padding:12px;align-items:flex-start;justify-content:center;overflow:auto">
+<div style="width:min(620px,100%);background:#fff;border-radius:16px;padding:16px;margin:18px 0;box-shadow:0 12px 40px #0003">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">المصروفات الخاصة</h3><button type="button" onclick="closePrivateExpenses()">إغلاق</button></div>
+<p style="margin:8px 0 14px;color:#667085;font-size:13px">مستقلة تمامًا عن مصروفات اليومية ولا تدخل في أي معادلة أو PDF لليومية.</p>
+<input id="peId" type="hidden">
 <label>التاريخ</label><input id="peDate" type="date" style="width:100%;padding:10px;margin:5px 0 10px">
-<label>اسم / نوع المصروف</label><input id="peName" style="width:100%;padding:10px;margin:5px 0 10px">
-<label>المبلغ</label><input id="peAmount" type="number" step=".01" style="width:100%;padding:10px;margin:5px 0 10px">
-<label>الملاحظة</label><textarea id="peNote" style="width:100%;padding:10px;margin:5px 0 10px"></textarea>
-<label>المرفق (اختياري)</label><input id="peFile" type="file" style="width:100%;margin:8px 0 16px">
-<div><button onclick="savePrivateExpense()">حفظ</button> <button onclick="closePrivateExpenses()">إلغاء</button></div>
+<label>اسم / نوع المصروف</label><input id="peName" style="width:100%;padding:10px;margin:5px 0 10px" placeholder="مثال: بنزين، كهرباء، غرفة اجتماع">
+<label>المبلغ</label><input id="peAmount" type="number" step=".01" min="0" style="width:100%;padding:10px;margin:5px 0 10px">
+<label>الملاحظة</label><textarea id="peNote" style="width:100%;padding:10px;margin:5px 0 10px;min-height:76px"></textarea>
+<label>المرفق (اختياري)</label><input id="peFile" type="file" style="width:100%;margin:8px 0 6px">
+<div id="peCurrentAttachment" style="display:none;background:#f7f9fc;border:1px solid #e1e7ef;border-radius:9px;padding:8px;margin-bottom:10px"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="green" type="button" onclick="savePrivateExpense()">حفظ المصروف</button><button type="button" onclick="resetPrivateExpenseForm()">مصروف جديد</button></div>
+<hr style="border:0;border-top:1px solid #e5e7eb;margin:18px 0">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>سجل المصروفات الخاصة</b><span id="peTotal" style="font-weight:bold">الإجمالي: 0.00 ريال</span></div>
+<div id="peList" style="margin-top:10px"></div>
 </div></div>
 <script>
 const KEY='poultry_daily_system_v1'; let editingId=null;
@@ -310,9 +630,7 @@ let dailyDirty=false;
 let previewOrigin='archive';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], num=x=>Number(x||0);
 function show(id){
-  if(isMobileUI() && (id==='home' || id==='database' || id==='archive')){
-    id='mobileHome';
-  }
+  if(isMobileUI() && (id==='home'||id==='database'||id==='archive')) id='mobileHome';
   const current=document.querySelector('.view.active');
   if(current && current.id==='daily' && id!=='daily' && dailyDirty){
     if(!confirm('يوجد تعديل في اليومية لم يتم حفظه. هل تريد الخروج بدون حفظ؟')) return false;
@@ -343,8 +661,7 @@ function renderHome(){
   let lastCollection=last?(last.sales||[]).reduce((a,s)=>a+num(s[5]),0):0;
   let expectedNext=last?(last.sales||[]).reduce((a,s)=>a+num(s[3]),0):0;
   let lastExpense=last?(last.expenses||[]).reduce((a,x)=>a+num(x[2]),0):0;
-  hQty.textContent=lastQty;
-  if(document.getElementById('hQtyDate'))hQtyDate.textContent=last?.date||'—';
+  hQty.textContent=lastQty;if(document.getElementById('hQtyDate'))hQtyDate.textContent=last?.date||'—';
   hCollect.textContent=lastCollection.toFixed(2);
   hExpense.textContent=lastExpense.toFixed(2);
   hExpectedNext.textContent=expectedNext.toFixed(2);
@@ -391,7 +708,9 @@ bindHeaderEnter();
 
 function addSale(v=[]){
   let tr=document.createElement('tr');
+  const labels=['الصنف','العدد','السعر','الإجمالي','رقم الفاتورة','التحصيل','العميل'];
   tr.innerHTML=`<td><input value="${v[0]||''}"></td><td><input class="qty" type="number" value="${v[1]||''}"></td><td><input class="price" type="number" step=".01" value="${v[2]||''}"></td><td><input class="lineTotal readonly" type="number" step=".01" value="${v[3]||''}"></td><td><input value="${v[4]||''}"></td><td><input class="collect" type="number" step=".01" value="${v[5]||''}"></td><td><input value="${v[6]||''}"></td>`;
+  [...tr.children].forEach((td,i)=>td.dataset.label=labels[i]);
   $('#sales tbody').appendChild(tr);
   let total=tr.querySelector('.lineTotal');
   enableCalculatedEdit(total);
@@ -399,7 +718,7 @@ function addSale(v=[]){
   bindTableEnter('sales',()=>addSale());
   calcSales();
 }
-function addExpense(v=[]){let tr=document.createElement('tr');tr.innerHTML=`<td><input value="${v[0]||''}"></td><td><input value="${v[1]||''}"></td><td><input class="expense" type="number" step=".01" value="${v[2]||''}"></td><td><input value="${v[3]||''}"></td><td><input value="${v[4]||''}"></td>`;$('#expenses tbody').appendChild(tr);tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',calcExpenses));bindTableEnter('expenses',()=>addExpense());calcExpenses()}
+function addExpense(v=[]){let tr=document.createElement('tr');const labels=['الصنف','رقم الفاتورة','المبلغ','طريقة الدفع','البيان'];tr.innerHTML=`<td><input value="${v[0]||''}"></td><td><input value="${v[1]||''}"></td><td><input class="expense" type="number" step=".01" value="${v[2]||''}"></td><td><input value="${v[3]||''}"></td><td><input value="${v[4]||''}"></td>`;[...tr.children].forEach((td,i)=>td.dataset.label=labels[i]);$('#expenses tbody').appendChild(tr);tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',calcExpenses));bindTableEnter('expenses',()=>addExpense());calcExpenses()}
 function bindTableEnter(tableId, addRowFn){
   const tbody = document.querySelector(`#${tableId} tbody`);
   if(!tbody)return;
@@ -811,56 +1130,7 @@ function downloadPrintFile(){
   nav,.actions,.toolbar,.rowadd,.addItem{display:none!important}
   .view{display:block!important}.preview-page{page-break-after:always}
   .preview-page:last-child{page-break-after:auto}
-  
-/* Mobile-device mode: independent of viewport width so iPhone landscape still uses mobile UI */
-html.mobile-device nav{display:none!important}
-html.mobile-device .page{width:100%;margin:0;border:0;box-shadow:none}
-html.mobile-device #database,
-html.mobile-device #archive{display:none!important}
-html.mobile-device #home.active{display:none!important}
-html.mobile-device #mobileHome.active{display:block!important}
-html.mobile-device .mobile-only{display:block}
-html.mobile-device .mobile-shell{min-height:100vh;padding:18px 16px 30px;background:#f7fbff}
-html.mobile-device .mobile-brand{text-align:center;padding:10px 0 18px}
-html.mobile-device .mobile-brand h1{margin:0;color:#10264a;font-size:29px}
-html.mobile-device .m-user,
-html.mobile-device .m-status,
-html.mobile-device .m-card{border-radius:18px;background:#fff;border:1px solid #d9e7f5;padding:18px;margin-bottom:14px}
-html.mobile-device .m-status{text-align:center}
-html.mobile-device .m-status.ok{background:#eaf9ef;color:#087a3e}
-html.mobile-device .m-status.wait{background:#fff2f2;color:#b42318}
-html.mobile-device .m-status b,
-html.mobile-device .m-status strong{display:block;font-size:22px;margin:5px}
-html.mobile-device .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-html.mobile-device .m-card{text-align:center}
-html.mobile-device .m-card strong{display:block;font-size:27px}
-html.mobile-device .m-open,
-html.mobile-device .m-private{width:100%;padding:17px;margin:0 0 12px;border-radius:16px;font:inherit;font-size:19px;font-weight:bold}
-html.mobile-device .m-open{background:#0969da;color:white;border:0}
-html.mobile-device .m-private{background:white;border:1px solid #c9d9ea}
-html.mobile-device #daily .paper-meta{min-width:0!important}
-html.mobile-device #daily #movement,
-html.mobile-device #daily #sales,
-html.mobile-device #daily #expenses{min-width:760px}
-html.mobile-device #daily .btns{display:grid;grid-template-columns:1fr 1fr}
-html.mobile-device .mobile-share{display:inline-block!important}
-@media(max-width:520px){
-  html.mobile-device .m-grid{grid-template-columns:1fr}
-}
-
-</style><script>
-(function(){
-  const ua=navigator.userAgent||'';
-  const appleMobile=/iPhone|iPad|iPod/i.test(ua) ||
-    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  const android=/Android/i.test(ua);
-  const coarse=window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
-  const smallScreen=Math.min(screen.width||9999,screen.height||9999)<=820;
-  if(appleMobile || android || (coarse && smallScreen)){
-    document.documentElement.classList.add('mobile-device');
-  }
-})();
-</script></head><body><div class="page">${content}</div></body></html>`;
+  </style></head><body><div class="page">${content}</div></body></html>`;
   const blob=new Blob([doc],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -961,14 +1231,31 @@ function deleteSavedAttachment(index){
 
 function editRec(id){let r=getRec(id);if(!r)return;editingId=id;dailyDirty=false;day.value=r.day||'';date.value=r.date||'';rep.value=r.rep||'';openAmount.value=r.openAmount||'';closeAmount.value=r.closeAmount||'';savedAttachmentMark.style.display=(r.attachments||[]).length?'inline-block':'none';files.value='';renderSavedAttachments(r);restoreMovement(r.movement);$('#sales tbody').innerHTML='';let sr=(r.sales||[]).filter(meaningfulSalesRow);if(sr.length)sr.forEach(addSale);else addSale();$('#expenses tbody').innerHTML='';let er=(r.expenses||[]).filter(x=>x.some(v=>String(v??'').trim()!==''));if(er.length)er.forEach(addExpense);else addExpense();calcSales();calcExpenses();show('daily')}
 
-const PRIVATE_EXPENSE_KEY='poultry_private_expenses_v1';
+let privateExpenses=[];
+let peExistingAttachment=null;
 function isMobileUI(){
   if(document.documentElement.classList.contains('mobile-device'))return true;
   const ua=navigator.userAgent||'';
-  return /iPhone|iPad|iPod|Android/i.test(ua) ||
-    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  return /iPhone|iPad|iPod|Android/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 }
-function currentDailyCycleDate(){let d=new Date();if(d.getHours()<18)d.setDate(d.getDate()-1);return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function currentDailyCycleStart(){
+  const now=new Date();
+  const start=new Date(now);
+  start.setHours(18,0,0,0);
+  if(now<start)start.setDate(start.getDate()-1);
+  return start;
+}
+function currentDailyCycleDate(){
+  const d=currentDailyCycleStart();
+  return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+function dailyRaisedInCurrentCycle(db){
+  const start=currentDailyCycleStart().getTime();
+  return db.some(r=>{
+    const t=Date.parse(r.savedAt||r.createdAt||'');
+    return Number.isFinite(t)&&t>=start;
+  });
+}
 function renderMobileHome(){
  if(!isMobileUI())return;
  let db=JSON.parse(localStorage.getItem(KEY)||'[]');
@@ -977,34 +1264,96 @@ function renderMobileHome(){
  mQty.textContent=last?(last.sales||[]).filter(meaningfulSalesRow).reduce((a,s)=>a+num(s[1]),0):0;
  mQtyDate.textContent=last?.date||'—';
  mExpected.textContent=(last?(last.sales||[]).filter(meaningfulSalesRow).reduce((a,s)=>a+num(s[3]),0):0).toFixed(2);
- let raised=db.some(r=>(r.date||'')===currentDailyCycleDate());
+ let raised=dailyRaisedInCurrentCycle(db);
  mStatus.classList.toggle('ok',raised);mStatus.classList.toggle('wait',!raised);
  mStatusText.textContent=raised?'تم رفع اليومية بنجاح':'لم يتم رفع اليومية';
 }
-function openPrivateExpenses(){peDate.value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);privateExpenseModal.style.display='flex'}
+function todayLocalISO(){return new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function escapeHtmlPrivate(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loadPrivateExpenses(){
+  const res=await authFetch('/api/private-expenses',{cache:'no-store'});
+  if(!res.ok)throw new Error('تعذر تحميل المصروفات الخاصة');
+  privateExpenses=await res.json();
+  renderPrivateExpenses();
+}
+async function openPrivateExpenses(){
+  resetPrivateExpenseForm();
+  privateExpenseModal.style.display='flex';
+  try{await loadPrivateExpenses()}catch(e){peList.innerHTML='<div style="padding:12px;color:#b42318">تعذر تحميل المصروفات الخاصة من الخادم.</div>'}
+}
 function closePrivateExpenses(){privateExpenseModal.style.display='none'}
-function savePrivateExpense(){
- if(!peDate.value||!peName.value.trim()||!peAmount.value){alert('أدخل التاريخ واسم المصروف والمبلغ.');return}
- const done=(attachment)=>{let a=JSON.parse(localStorage.getItem(PRIVATE_EXPENSE_KEY)||'[]');a.push({id:'PE-'+Date.now(),date:peDate.value,name:peName.value.trim(),amount:peAmount.value,note:peNote.value.trim(),attachment,savedAt:new Date().toISOString()});localStorage.setItem(PRIVATE_EXPENSE_KEY,JSON.stringify(a));closePrivateExpenses();alert('تم حفظ المصروف الخاص بشكل مستقل عن اليومية.')}
- let f=peFile.files[0];if(!f){done(null);return}let r=new FileReader();r.onload=()=>done({name:f.name,type:f.type,data:r.result});r.readAsDataURL(f);
+function resetPrivateExpenseForm(){
+  peId.value='';peDate.value=todayLocalISO();peName.value='';peAmount.value='';peNote.value='';peFile.value='';
+  peExistingAttachment=null;peCurrentAttachment.style.display='none';peCurrentAttachment.innerHTML='';
+}
+function showPrivateAttachment(att){
+  if(!att){peCurrentAttachment.style.display='none';peCurrentAttachment.innerHTML='';return}
+  peCurrentAttachment.style.display='block';
+  peCurrentAttachment.innerHTML=`المرفق الحالي: <b>${escapeHtmlPrivate(att.name||'مرفق')}</b> <button type="button" onclick="removePrivateAttachment()" style="margin-right:8px">حذف المرفق</button>`;
+}
+function removePrivateAttachment(){peExistingAttachment=null;peFile.value='';showPrivateAttachment(null)}
+function editPrivateExpense(id){
+  const r=privateExpenses.find(x=>String(x.id)===String(id));if(!r)return;
+  peId.value=r.id;peDate.value=r.date||todayLocalISO();peName.value=r.name||'';peAmount.value=r.amount??'';peNote.value=r.note||'';
+  peFile.value='';peExistingAttachment=r.attachment||null;showPrivateAttachment(peExistingAttachment);privateExpenseModal.scrollTo({top:0,behavior:'smooth'});
+}
+async function fileToDataUrlPrivate(file){return await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve({name:file.name,type:file.type,data:fr.result});fr.onerror=reject;fr.readAsDataURL(file)})}
+async function savePrivateExpense(){
+  if(!peDate.value||!peName.value.trim()||!(num(peAmount.value)>0)){alert('أدخل التاريخ واسم المصروف والمبلغ.');return}
+  try{
+    const newFile=peFile.files[0];
+    const attachment=newFile?await fileToDataUrlPrivate(newFile):peExistingAttachment;
+    const old=privateExpenses.find(x=>String(x.id)===String(peId.value));
+    const id=peId.value||('PE-'+Date.now()+'-'+Math.random().toString(36).slice(2,6));
+    const now=new Date().toISOString();
+    const rec={id,date:peDate.value,name:peName.value.trim(),amount:num(peAmount.value),note:peNote.value.trim(),attachment:attachment||null,createdAt:old?.createdAt||now,savedAt:now};
+    const res=await authFetch('/api/private-expenses/'+encodeURIComponent(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:rec})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){alert(data.detail||'تعذر حفظ المصروف الخاص');return}
+    await loadPrivateExpenses();resetPrivateExpenseForm();alert(old?'تم تحديث المصروف الخاص.':'تم حفظ المصروف الخاص بشكل مستقل عن اليومية.');
+  }catch(e){alert('تعذر حفظ المصروف الخاص على الخادم.')}
+}
+async function deletePrivateExpense(id){
+  const r=privateExpenses.find(x=>String(x.id)===String(id));if(!r)return;
+  if(!confirm(`هل تريد حذف المصروف «${r.name||''}»؟`))return;
+  try{
+    const res=await authFetch('/api/private-expenses/'+encodeURIComponent(id),{method:'DELETE'});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){alert(data.detail||'تعذر حذف المصروف الخاص');return}
+    if(String(peId.value)===String(id))resetPrivateExpenseForm();await loadPrivateExpenses();
+  }catch(e){alert('تعذر حذف المصروف الخاص من الخادم.')}
+}
+function renderPrivateExpenses(){
+  const rows=[...privateExpenses].sort((a,b)=>((b.date||'').localeCompare(a.date||''))||((b.savedAt||'').localeCompare(a.savedAt||'')));
+  peTotal.textContent='الإجمالي: '+rows.reduce((a,r)=>a+num(r.amount),0).toFixed(2)+' ريال';
+  if(!rows.length){peList.innerHTML='<div style="padding:14px;text-align:center;color:#667085">لا توجد مصروفات خاصة محفوظة.</div>';return}
+  peList.innerHTML=rows.map(r=>`<div style="border:1px solid #dfe7ef;border-radius:12px;padding:11px;margin:8px 0;background:#fbfdff">
+    <div style="display:flex;justify-content:space-between;gap:10px"><b>${escapeHtmlPrivate(r.name)}</b><strong>${num(r.amount).toFixed(2)} ريال</strong></div>
+    <div style="font-size:13px;color:#667085;margin-top:5px">${escapeHtmlPrivate(r.date||'')} ${r.note?'— '+escapeHtmlPrivate(r.note):''}</div>
+    ${r.attachment?`<div style="font-size:12px;margin-top:5px">📎 ${escapeHtmlPrivate(r.attachment.name||'مرفق')}</div>`:''}
+    <div style="margin-top:8px"><button type="button" onclick="editPrivateExpense('${String(r.id).replace(/'/g,"\\'")}')">تعديل</button> <button type="button" onclick="deletePrivateExpense('${String(r.id).replace(/'/g,"\\'")}')">حذف</button></div>
+  </div>`).join('');
+}
+function openMobileDaily(){
+  if(!isMobileUI()){show('daily');return;}
+  show('daily');
+  window.scrollTo(0,0);
+}
+function backToMobileHome(){
+  if(isMobileUI()){dailyDirty=false;show('mobileHome');renderMobileHome();window.scrollTo(0,0);}
+  else{show('home');renderHome();}
 }
 function applyDeviceHome(){
-  if(isMobileUI()){
-    document.documentElement.classList.add('mobile-device');
-    show('mobileHome');
-    renderMobileHome();
-  }else{
-    show('home');
-    renderHome();
-  }
+  if(isMobileUI()){document.documentElement.classList.add('mobile-device');show('mobileHome');renderMobileHome();}
+  else{show('home');renderHome();}
 }
 window.addEventListener('orientationchange',()=>setTimeout(()=>{
   if(isMobileUI()){
     document.documentElement.classList.add('mobile-device');
-    const active=document.querySelector('.view.active')?.id;
-    if(active==='home'||active==='database'||active==='archive')applyDeviceHome();
+    const active=document.querySelector('.view.active');
+    if(!active||['home','database','archive'].includes(active.id))applyDeviceHome();
   }
-},150));
+},120));
 
 newDaily();
 checkLogin().then(async ok=>{if(ok){await syncFromServer();applyDeviceHome();}});
