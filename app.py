@@ -65,6 +65,20 @@ def init_db():
           FOREIGN KEY(username) REFERENCES users(username)
         )
         """)
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS private_expenses (
+          id TEXT PRIMARY KEY,
+          expense_date TEXT NOT NULL,
+          name TEXT NOT NULL,
+          amount REAL NOT NULL DEFAULT 0,
+          created_by TEXT NOT NULL,
+          saved_at TEXT NOT NULL,
+          payload TEXT NOT NULL,
+          FOREIGN KEY(created_by) REFERENCES users(username)
+        )
+        """)
+        c.execute("CREATE INDEX IF NOT EXISTS idx_private_expenses_date ON private_expenses(expense_date)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_private_expenses_user ON private_expenses(created_by)")
         existing = c.execute("SELECT username FROM users LIMIT 1").fetchone()
         if not existing:
             admin_password = os.getenv("DAILY_ADMIN_PASSWORD", "Poultry@2026")
@@ -74,6 +88,9 @@ def init_db():
 init_db()
 
 class Daily(BaseModel):
+    data: Dict[str, Any]
+
+class PrivateExpense(BaseModel):
     data: Dict[str, Any]
 
 class LoginBody(BaseModel):
@@ -201,6 +218,80 @@ def upsert_daily(daily_id: str, body: Daily, user=Depends(current_user)):
 def delete_daily(daily_id: str, admin=Depends(require_admin)):
     with conn() as c:
         c.execute("DELETE FROM dailies WHERE id=?", (daily_id,))
+    return {"ok": True}
+
+@app.get("/api/private-expenses")
+def list_private_expenses(user=Depends(current_user)):
+    with conn() as c:
+        rows = c.execute(
+            "SELECT payload FROM private_expenses WHERE created_by=? ORDER BY expense_date DESC, saved_at DESC",
+            (user["username"],)
+        ).fetchall()
+    return [json.loads(r["payload"]) for r in rows]
+
+@app.put("/api/private-expenses/{expense_id}")
+def upsert_private_expense(expense_id: str, body: PrivateExpense, user=Depends(current_user)):
+    rec = dict(body.data)
+    if str(rec.get("id")) != expense_id:
+        raise HTTPException(400, "private expense id mismatch")
+    expense_date = str(rec.get("date") or "").strip()
+    name = str(rec.get("name") or "").strip()
+    try:
+        amount = float(rec.get("amount") or 0)
+    except (TypeError, ValueError):
+        raise HTTPException(400, "مبلغ المصروف غير صالح")
+    if not expense_date or not name or amount <= 0:
+        raise HTTPException(400, "التاريخ واسم المصروف والمبلغ مطلوبة")
+
+    now_iso = str(rec.get("savedAt") or "").strip()
+    if not now_iso:
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    with conn() as c:
+        existing = c.execute(
+            "SELECT created_by,payload FROM private_expenses WHERE id=?", (expense_id,)
+        ).fetchone()
+        if existing and existing["created_by"] != user["username"]:
+            raise HTTPException(403, "لا تملك صلاحية تعديل هذا المصروف")
+
+        created_by = existing["created_by"] if existing else user["username"]
+        rec["date"] = expense_date
+        rec["name"] = name
+        rec["amount"] = amount
+        rec["savedAt"] = now_iso
+        rec["createdBy"] = created_by
+        rec["updatedBy"] = user["username"]
+        if not rec.get("createdAt"):
+            if existing:
+                try:
+                    old = json.loads(existing["payload"])
+                    rec["createdAt"] = old.get("createdAt") or old.get("savedAt") or now_iso
+                except Exception:
+                    rec["createdAt"] = now_iso
+            else:
+                rec["createdAt"] = now_iso
+
+        c.execute("""
+        INSERT INTO private_expenses(id,expense_date,name,amount,created_by,saved_at,payload)
+        VALUES(?,?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET
+          expense_date=excluded.expense_date,
+          name=excluded.name,
+          amount=excluded.amount,
+          saved_at=excluded.saved_at,
+          payload=excluded.payload
+        """, (expense_id, expense_date, name, amount, created_by, now_iso, json.dumps(rec, ensure_ascii=False)))
+    return {"ok": True, "id": expense_id, "data": rec}
+
+@app.delete("/api/private-expenses/{expense_id}")
+def delete_private_expense(expense_id: str, user=Depends(current_user)):
+    with conn() as c:
+        row = c.execute("SELECT created_by FROM private_expenses WHERE id=?", (expense_id,)).fetchone()
+        if not row:
+            return {"ok": True}
+        if row["created_by"] != user["username"]:
+            raise HTTPException(403, "لا تملك صلاحية حذف هذا المصروف")
+        c.execute("DELETE FROM private_expenses WHERE id=?", (expense_id,))
     return {"ok": True}
 
 @app.get("/")
