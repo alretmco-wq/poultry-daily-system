@@ -451,7 +451,7 @@ html.employee-mode .m-private{display:none!important}
 .home-order-controls{display:flex;gap:8px;justify-content:flex-start;margin:8px 16px 12px}
 .home-order-controls button{padding:8px 14px;border:1px solid #999;border-radius:5px;background:#fff;font-weight:700;cursor:pointer}
 #saveHomeOrderBtn{background:#168b55;color:#fff;border-color:#168b55}
-.home-ordering [data-home-card]{cursor:grab;outline:2px dashed #168b55;outline-offset:-4px;user-select:none}
+.home-ordering [data-home-card]{cursor:grab;outline:2px dashed #168b55;outline-offset:-4px;user-select:none;position:relative}.home-ordering [data-home-card]::after{content:'اسحب';position:absolute;top:5px;left:7px;font-size:11px;background:#168b55;color:#fff;padding:2px 6px;border-radius:4px}
 .home-ordering [data-home-card]:active{cursor:grabbing}
 .home-ordering [data-home-card].dragging{opacity:.45}
 html.mobile-device .home-order-controls,html.employee-mode .home-order-controls{display:none!important}
@@ -465,66 +465,81 @@ html.mobile-device .home-order-controls,html.employee-mode .home-order-controls{
   else document.documentElement.classList.remove('mobile-device');
 })();
 
-const HOME_ORDER_KEY='desktopHomeCardOrderV1';
+const HOME_ORDER_KEY='desktopHomeCardOrderV2';
+function currentHomeOrderKey(){return HOME_ORDER_KEY+':'+(currentUser?.username||'guest')}
 let homeOrderSnapshot=null;
+let draggedHomeCard=null;
+function getHomeGrid(){return document.querySelector('#home .home-grid');}
 function getHomeCards(){
-  return [...document.querySelectorAll('#home [data-home-card]')];
-}
-function getHomeGrid(){
-  const cards=getHomeCards();
-  return cards.length?cards[0].parentElement:null;
+  const grid=getHomeGrid();
+  return grid?[...grid.querySelectorAll(':scope > .home-box[data-home-card]')]:[];
 }
 function applyHomeOrder(){
-  const grid=getHomeGrid(); if(!grid)return;
-  let order=[]; try{order=JSON.parse(localStorage.getItem(HOME_ORDER_KEY)||'[]')}catch(e){}
+  const grid=getHomeGrid();if(!grid)return;
+  let order=[];try{order=JSON.parse(localStorage.getItem(currentHomeOrderKey())||'[]')}catch(e){}
   if(!Array.isArray(order)||!order.length)return;
   const map=Object.fromEntries(getHomeCards().map(c=>[c.dataset.homeCard,c]));
   order.forEach(id=>{if(map[id])grid.appendChild(map[id])});
-  Object.keys(map).filter(id=>!order.includes(id)).forEach(id=>grid.appendChild(map[id]));
+  getHomeCards().filter(c=>!order.includes(c.dataset.homeCard)).forEach(c=>grid.appendChild(c));
 }
 function startHomeOrder(){
   if(document.documentElement.classList.contains('mobile-device'))return;
-  const grid=getHomeGrid(), cards=getHomeCards(); if(!grid||!cards.length)return;
+  const grid=getHomeGrid(),cards=getHomeCards();if(!grid||cards.length!==8)return;
   homeOrderSnapshot=cards.map(c=>c.dataset.homeCard);
   grid.classList.add('home-ordering');
-  cards.forEach(c=>{
-    c.draggable=true;
-    c.addEventListener('dragstart',homeCardDragStart);
-    c.addEventListener('dragover',homeCardDragOver);
-    c.addEventListener('drop',homeCardDrop);
-    c.addEventListener('dragend',homeCardDragEnd);
-  });
+  cards.forEach(c=>{c.style.touchAction='none';c.addEventListener('pointerdown',homeCardPointerDown)});
   document.getElementById('editHomeOrderBtn').style.display='none';
   document.getElementById('saveHomeOrderBtn').style.display='';
   document.getElementById('cancelHomeOrderBtn').style.display='';
 }
-let draggedHomeCard=null;
-function homeCardDragStart(e){draggedHomeCard=this;this.classList.add('dragging');e.dataTransfer.effectAllowed='move'}
-function homeCardDragOver(e){
+function homeCardPointerDown(e){
+  if(e.button!==undefined&&e.button!==0)return;
+  if(!this.closest('.home-ordering'))return;
   e.preventDefault();
-  if(!draggedHomeCard||draggedHomeCard===this)return;
-  const grid=getHomeGrid(), cards=getHomeCards();
-  const from=cards.indexOf(draggedHomeCard), to=cards.indexOf(this);
-  if(from<to)grid.insertBefore(draggedHomeCard,this.nextSibling); else grid.insertBefore(draggedHomeCard,this);
+  draggedHomeCard=this;
+  const card=this;
+  card.classList.add('dragging');
+  card.setPointerCapture?.(e.pointerId);
+  const move=(ev)=>{
+    if(!draggedHomeCard)return;
+    ev.preventDefault();
+    const el=document.elementFromPoint(ev.clientX,ev.clientY);
+    const target=el?.closest?.('#home .home-grid > .home-box[data-home-card]');
+    if(!target||target===draggedHomeCard)return;
+    const grid=getHomeGrid(),cards=getHomeCards();
+    const from=cards.indexOf(draggedHomeCard),to=cards.indexOf(target);
+    if(from<to)grid.insertBefore(draggedHomeCard,target.nextSibling);
+    else grid.insertBefore(draggedHomeCard,target);
+  };
+  const up=(ev)=>{
+    card.releasePointerCapture?.(ev.pointerId);
+    card.classList.remove('dragging');
+    draggedHomeCard=null;
+    window.removeEventListener('pointermove',move);
+    window.removeEventListener('pointerup',up);
+    window.removeEventListener('pointercancel',up);
+  };
+  window.addEventListener('pointermove',move,{passive:false});
+  window.addEventListener('pointerup',up);
+  window.addEventListener('pointercancel',up);
 }
-function homeCardDrop(e){e.preventDefault()}
-function homeCardDragEnd(){this.classList.remove('dragging');draggedHomeCard=null}
 function stopHomeOrder(){
-  const grid=getHomeGrid(); if(grid)grid.classList.remove('home-ordering');
-  getHomeCards().forEach(c=>{c.draggable=false;c.removeEventListener('dragstart',homeCardDragStart);c.removeEventListener('dragover',homeCardDragOver);c.removeEventListener('drop',homeCardDrop);c.removeEventListener('dragend',homeCardDragEnd)});
+  const grid=getHomeGrid();if(grid)grid.classList.remove('home-ordering');
+  getHomeCards().forEach(c=>{c.style.touchAction='';c.removeEventListener('pointerdown',homeCardPointerDown)});
   const a=document.getElementById('editHomeOrderBtn'),b=document.getElementById('saveHomeOrderBtn'),c=document.getElementById('cancelHomeOrderBtn');
-  if(a)a.style.display=''; if(b)b.style.display='none'; if(c)c.style.display='none';
+  if(a)a.style.display='';if(b)b.style.display='none';if(c)c.style.display='none';
 }
 function saveHomeOrder(){
-  localStorage.setItem(HOME_ORDER_KEY,JSON.stringify(getHomeCards().map(c=>c.dataset.homeCard)));
-  homeOrderSnapshot=null; stopHomeOrder();
+  localStorage.setItem(currentHomeOrderKey(),JSON.stringify(getHomeCards().map(c=>c.dataset.homeCard)));
+  homeOrderSnapshot=null;stopHomeOrder();
 }
 function cancelHomeOrder(){
-  const grid=getHomeGrid(); if(grid&&homeOrderSnapshot){
+  const grid=getHomeGrid();
+  if(grid&&homeOrderSnapshot){
     const map=Object.fromEntries(getHomeCards().map(c=>[c.dataset.homeCard,c]));
     homeOrderSnapshot.forEach(id=>{if(map[id])grid.appendChild(map[id])});
   }
-  homeOrderSnapshot=null; stopHomeOrder();
+  homeOrderSnapshot=null;stopHomeOrder();
 }
 document.addEventListener('DOMContentLoaded',applyHomeOrder);
 
@@ -534,7 +549,7 @@ document.addEventListener('DOMContentLoaded',applyHomeOrder);
 <nav><button onclick="show('home');renderHome()">الرئيسية</button><button onclick="show('daily')">اليومية</button><button onclick="show('database');renderDB()">قاعدة البيانات</button><button onclick="show('archive');renderArchive()">أرشيف اليوميات</button><div class="userbar"><span id="whoami"></span><button onclick="changeMyPassword()">تغيير كلمة المرور</button><button onclick="logoutNow()">خروج</button></div></nav>
 
 
-<div data-home-card="4" id="mobileHome" class="view page mobile-only"><div class="mobile-shell">
+<div id="mobileHome" class="view page mobile-only"><div class="mobile-shell">
 <div class="mobile-brand"><h1>توزيع الدواجن</h1><small>نظام اليومية</small></div>
 <div class="m-user">مرحباً <span id="mUser">—</span></div>
 <div id="mStatus" class="m-status wait"><b>حالة اليومية</b><strong id="mStatusText">لم يتم رفع اليومية</strong></div>
@@ -545,23 +560,28 @@ document.addEventListener('DOMContentLoaded',applyHomeOrder);
 <button class="m-open" onclick="openMobileDaily()">فتح اليومية</button>
 <button class="m-private" onclick="openPrivateExpenses()">المصروفات الخاصة</button>
 </div></div>
-<div data-home-card="2" id="home" class="view page">
-<div data-home-card="3" class="sec">الرئيسية — ملخص اليوميات</div>
-<div data-home-card="5" class="home-grid">
-
-<div class="home-box"><b>إجمالي عدد مبيعات آخر يومية</b><strong id="hQty">0</strong><small id="hQtyDate" style="display:block;margin-top:6px;color:#666">—</small></div>
-<div data-home-card="6" class="home-box"><b>إجمالي تحصيل آخر يومية</b><strong id="hCollect">0.00</strong></div>
-<div data-home-card="7" class="home-box"><b>إجمالي مصروفات آخر يومية</b><strong id="hExpense">0.00</strong></div>
-<div data-home-card="8" class="home-box"><b>متوقع تحصيل اليومية القادمة</b><strong id="hExpectedNext">0.00</strong></div>
-
-
-
-<div class="home-box"><b>إجمالي عدد المبيعات — آخر 30 يوم</b><strong id="h30Qty">0</strong></div>
-<div class="home-box"><b>إجمالي التحصيل — آخر 30 يوم</b><strong id="h30Collect">0.00</strong></div>
-<div class="home-box"><b>إجمالي المصروفات — آخر 30 يوم</b><strong id="h30Expense">0.00</strong></div>
-<div class="home-box" id="hLastBox" style="cursor:pointer" title="اضغط لفتح آخر يومية"><b>آخر يومية محفوظة</b><strong id="hLast" style="font-size:16px">—</strong></div>
+<div id="home" class="view page">
+<div class="sec">الرئيسية — ملخص اليوميات</div>
+<div id="homeOrderControls" class="home-order-controls desktop-only">
+<button type="button" id="editHomeOrderBtn" onclick="startHomeOrder()">ترتيب المربعات</button>
+<button type="button" id="saveHomeOrderBtn" onclick="saveHomeOrder()" style="display:none">حفظ الترتيب</button>
+<button type="button" id="cancelHomeOrderBtn" onclick="cancelHomeOrder()" style="display:none">إلغاء</button>
 </div>
-<div class="actions btns"><button class="green" onclick="openLastDailyPreview()">فتح اليومية</button><button onclick="show('database');renderDB()">قاعدة البيانات</button><button onclick="show('archive');renderArchive()">الأرشيف</button></div>
+<div class="home-grid">
+
+<div class="home-box" data-home-card="1"><b>إجمالي عدد مبيعات آخر يومية</b><strong id="hQty">0</strong><small id="hQtyDate" style="display:block;margin-top:6px;color:#666">—</small></div>
+<div class="home-box" data-home-card="2"><b>إجمالي تحصيل آخر يومية</b><strong id="hCollect">0.00</strong></div>
+<div class="home-box" data-home-card="3"><b>إجمالي مصروفات آخر يومية</b><strong id="hExpense">0.00</strong></div>
+<div class="home-box" data-home-card="4"><b>متوقع تحصيل اليومية القادمة</b><strong id="hExpectedNext">0.00</strong></div>
+
+
+
+<div class="home-box" data-home-card="5"><b>إجمالي عدد المبيعات — آخر 30 يوم</b><strong id="h30Qty">0</strong></div>
+<div class="home-box" data-home-card="6"><b>إجمالي التحصيل — آخر 30 يوم</b><strong id="h30Collect">0.00</strong></div>
+<div class="home-box" data-home-card="7"><b>إجمالي المصروفات — آخر 30 يوم</b><strong id="h30Expense">0.00</strong></div>
+<div class="home-box" id="hLastBox" style="cursor:pointer" title="اضغط لفتح آخر يومية" data-home-card="8"><b>آخر يومية محفوظة</b><strong id="hLast" style="font-size:16px">—</strong></div>
+</div>
+<div class="actions btns"><button class="green" onclick="openLastDailyPreview()">فتح اليومية</button><button onclick="show('database');renderDB()">قاعدة البيانات</button><button onclick="show('archive');renderArchive()">الأرشيف</button><button id="addUserHomeBtn" class="blue" onclick="openUserModal()">+ إضافة مستخدم</button></div>
 </div>
 <div id="daily" class="view page">
 <div class="mobile-daily-top"><button type="button" onclick="backToMobileHome()">الرئيسية</button><span>صفحة الإدخال اليومية</span></div>
@@ -656,6 +676,33 @@ document.addEventListener('DOMContentLoaded',applyHomeOrder);
 </div></div>
 
 
+
+<div id="userModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9100;padding:12px;align-items:flex-start;justify-content:center;overflow:auto">
+  <div style="width:min(560px,100%);background:#fff;border-radius:16px;padding:18px;margin:30px 0;box-shadow:0 12px 40px #0003">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <h3 style="margin:0">إضافة مستخدم</h3>
+      <button type="button" onclick="closeUserModal()">إغلاق</button>
+    </div>
+    <div id="userModalMsg" style="min-height:24px;margin:10px 0;font-weight:bold"></div>
+    <label>اسم المستخدم</label>
+    <input id="newSysUsername" autocomplete="off" style="width:100%;padding:10px;margin:5px 0 10px;border:1px solid #bbb;border-radius:8px">
+    <label>اسم الموظف</label>
+    <input id="newSysDisplayName" autocomplete="off" style="width:100%;padding:10px;margin:5px 0 10px;border:1px solid #bbb;border-radius:8px">
+    <label>كلمة المرور</label>
+    <input id="newSysPassword" type="password" autocomplete="new-password" style="width:100%;padding:10px;margin:5px 0 10px;border:1px solid #bbb;border-radius:8px">
+    <label>نوع المستخدم</label>
+    <select id="newSysRole" style="width:100%;padding:10px;margin:5px 0 14px;border:1px solid #bbb;border-radius:8px">
+      <option value="warehouse">أمين مستودع</option>
+      <option value="sales_rep">مندوب</option>
+      <option value="accountant">محاسب</option>
+    </select>
+    <button class="green" type="button" onclick="createUserFromHome()" style="width:100%;padding:11px;border-radius:8px">إنشاء المستخدم</button>
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:18px 0">
+    <b>المستخدمون الحاليون</b>
+    <div id="usersHomeList" style="margin-top:10px"></div>
+  </div>
+</div>
+
 <div id="privateExpenseModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9000;padding:12px;align-items:flex-start;justify-content:center;overflow:auto">
 <div style="width:min(620px,100%);background:#fff;border-radius:16px;padding:16px;margin:18px 0;box-shadow:0 12px 40px #0003">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">المصروفات الخاصة</h3><button type="button" onclick="closePrivateExpenses()">إغلاق</button></div>
@@ -673,7 +720,7 @@ document.addEventListener('DOMContentLoaded',applyHomeOrder);
 <div id="peList" style="margin-top:10px"></div>
 </div></div>
 <script>
-const KEY='poultry_daily_system_v1'; let editingId=null;
+const KEY='poultry_daily_system_v1'; const BACKUP_KEY='poultry_daily_system_backup_v1'; let editingId=null;
 let currentUser=null;
 async function authFetch(url,opts={}){
   const res=await fetch(url,opts);
@@ -688,7 +735,7 @@ async function checkLogin(){
     if(!res.ok){showLogin();return false;}
     currentUser=await res.json();
     whoami.textContent=(currentUser.display_name||currentUser.username)+(currentUser.role==='admin'?' — إدارة':'');
-    hideLogin();return true;
+    hideLogin();applyHomeOrder();return true;
   }catch(e){showLogin();return false;}
 }
 async function loginNow(){
@@ -697,7 +744,7 @@ async function loginNow(){
     const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:loginUser.value.trim(),password:loginPass.value})});
     const data=await res.json().catch(()=>({}));
     if(!res.ok){loginError.textContent=data.detail||'تعذر تسجيل الدخول';return;}
-    currentUser=data.user;whoami.textContent=(currentUser.display_name||currentUser.username)+(currentUser.role==='admin'?' — إدارة':'');hideLogin();
+    currentUser=data.user;whoami.textContent=(currentUser.display_name||currentUser.username)+(currentUser.role==='admin'?' — إدارة':'');hideLogin();applyHomeOrder();
     loginPass.value='';await syncFromServer();applyDeviceHome();
   }catch(e){loginError.textContent='تعذر الاتصال بالخادم';}
 }
@@ -717,25 +764,77 @@ async function changeMyPassword(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none'&&(document.activeElement===loginUser||document.activeElement===loginPass))loginNow();});
 
+
+function readLocalDailies(){
+  let primary=[], backup=[];
+  try{primary=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}
+  try{backup=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]')}catch(e){}
+  if(!Array.isArray(primary))primary=[];
+  if(!Array.isArray(backup))backup=[];
+  const map=new Map();
+  [...backup,...primary].forEach(r=>{
+    if(!r||!r.id)return;
+    const old=map.get(String(r.id));
+    if(!old || String(r.savedAt||'')>=String(old.savedAt||'')) map.set(String(r.id),r);
+  });
+  return [...map.values()];
+}
+function writeLocalDailies(db){
+  if(!Array.isArray(db))db=[];
+  localStorage.setItem(KEY,JSON.stringify(db));
+  localStorage.setItem(BACKUP_KEY,JSON.stringify(db));
+}
+async function restoreMissingLocalDailiesToServer(localDb,serverDb){
+  if(!currentUser || currentUser.role!=='admin')return serverDb;
+  const serverIds=new Set((serverDb||[]).map(r=>String(r.id)));
+  const missing=(localDb||[]).filter(r=>r&&r.id&&!serverIds.has(String(r.id)));
+  for(const rec of missing){
+    try{await syncRecordToServer(rec)}catch(e){console.warn('تعذر استعادة اليومية',rec.id,e)}
+  }
+  if(!missing.length)return serverDb;
+  try{
+    const res=await authFetch('/api/dailies',{cache:'no-store'});
+    const refreshed=await res.json().catch(()=>[]);
+    if(res.ok&&Array.isArray(refreshed))return refreshed;
+  }catch(e){}
+  return serverDb;
+}
+
 let serverMode=true;
 async function syncFromServer(){
+  const localDb=readLocalDailies();
   try{
     if(currentUser && currentUser.role!=='admin'){
+      // Employee mode must not expose the archive; do not destroy the backup.
       localStorage.setItem(KEY,'[]');
       serverMode=true;
       return [];
     }
     const res=await authFetch('/api/dailies',{cache:'no-store'});
     if(!res.ok)throw new Error('server');
-    const db=await res.json();
-    localStorage.setItem(KEY,JSON.stringify(db));
+    let serverDb=await res.json();
+    if(!Array.isArray(serverDb))serverDb=[];
+
+    // Critical protection:
+    // If Render restarts with an empty SQLite database, keep the browser copy
+    // and automatically restore missing saved dailies back to the server.
+    if(localDb.length){
+      serverDb=await restoreMissingLocalDailiesToServer(localDb,serverDb);
+    }
+
+    // Never replace a non-empty local archive with an empty server response.
+    const finalDb=(serverDb.length?serverDb:localDb);
+    writeLocalDailies(finalDb);
+
     serverMode=true;
     renderHome();renderArchive();renderDB();
-    return db;
+    return finalDb;
   }catch(e){
     serverMode=false;
-    console.warn('تعذر الاتصال بالخادم، تم استخدام النسخة المحلية مؤقتاً');
-    throw e;
+    // Preserve and continue using the last known local/backup copy.
+    if(localDb.length)writeLocalDailies(localDb);
+    console.warn('تعذر الاتصال بالخادم، تم الاحتفاظ بالنسخة المحلية وعدم حذف الحفظ السابق');
+    return localDb;
   }
 }
 async function syncRecordToServer(rec){
@@ -763,7 +862,7 @@ async function verifyDailySavedOnServer(id){
   if(!res.ok || !Array.isArray(db))throw new Error('تعذر التحقق من الأرشيف على الخادم');
   const found=db.some(r=>String(r.id)===String(id));
   if(!found)throw new Error('لم تظهر اليومية في الأرشيف بعد الحفظ');
-  localStorage.setItem(KEY,JSON.stringify(db));
+  writeLocalDailies(db);
   serverMode=true;
   return db;
 }
@@ -1339,7 +1438,49 @@ function viewRec(id){
 }
 
 function printPreview(){
-  window.print();
+  const content=document.getElementById('detail')?.innerHTML||'';
+  if(!content){alert('لا توجد يومية في المعاينة.');return;}
+
+  /* اطبع نفس كليشة الكمبيوتر حرفياً في نافذة مستقلة،
+     بدون أي class أو CSS خاص بالجوال. */
+  const desktopPrintCss=`
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;font-family:Tahoma,Arial,sans-serif;color:#111;direction:rtl}
+  .preview-file{background:#fff;padding:0}
+  .preview-page{width:100%;min-height:auto;margin:0;background:#fff;border:0;box-shadow:none;padding:14px;position:relative;page-break-after:always}
+  .preview-page:last-child{page-break-after:auto}
+  .preview-page-label{display:none}
+  .archive-head{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid #999;margin:12px}
+  .archive-head div{padding:9px;border-left:1px solid #999;border-bottom:1px solid #999}
+  .archive-head b{display:block;background:#eee;margin:-9px -9px 6px;padding:6px}
+  .sec{position:relative;background:#e8e8e8;text-align:center;font-weight:bold;font-size:18px;padding:8px;border-bottom:1px solid #999}
+  .wrap{overflow:visible}
+  table,.movement-view{width:calc(100% - 24px);margin:12px;border-collapse:collapse;table-layout:fixed}
+  th,td{border-left:1px solid #999;border-bottom:1px solid #999;text-align:center;height:38px;padding:4px}
+  th:last-child,td:last-child{border-left:none}
+  th{background:#eee}
+  .summary{font-weight:bold;background:#e8e8e8}
+  .preview-attachment{display:flex;align-items:center;justify-content:center;min-height:auto}
+  .preview-attachment img{max-width:100%;max-height:260mm;object-fit:contain}
+  .preview-attachment iframe{width:100%;height:260mm;border:0}
+  @page{size:A4 portrait;margin:8mm}
+  `;
+  const doc=`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">
+  <meta name="viewport" content="width=1024">
+  <title>طباعة اليومية</title><style>${desktopPrintCss}</style></head>
+  <body>${content}</body></html>`;
+
+  const w=window.open('','_blank');
+  if(!w){
+    alert('اسمح بفتح نافذة الطباعة ثم أعد المحاولة.');
+    return;
+  }
+  w.document.open();
+  w.document.write(doc);
+  w.document.close();
+  const doPrint=()=>{try{w.focus();w.print()}catch(e){}};
+  if(w.document.readyState==='complete')setTimeout(doPrint,250);
+  else w.onload=()=>setTimeout(doPrint,250);
 }
 function downloadPrintFile(){
   const content=document.getElementById('detail')?.innerHTML||'';
@@ -1442,7 +1583,7 @@ function deleteSavedAttachment(index){
   let name=rec.attachments[index].name||'المرفق';
   if(!confirm(`هل تريد حذف المرفق «${name}»؟`))return;
   rec.attachments.splice(index,1);
-  localStorage.setItem(KEY,JSON.stringify(db));
+  writeLocalDailies(db);
   syncRecordToServer(rec).catch(()=>alert('تعذر تحديث حذف المرفق على الخادم.'));
   dailyDirty=true;
   saveLocked=false;
@@ -1563,9 +1704,64 @@ function backToMobileHome(){
   if(isMobileUI()){dailyDirty=false;show('mobileHome');renderMobileHome();window.scrollTo(0,0);}
   else{show('home');renderHome();}
 }
+
+async function openUserModal(){
+  if(!currentUser || currentUser.role!=='admin')return;
+  userModal.style.display='flex';
+  newSysUsername.value='';
+  if(document.getElementById('newSysDisplayName'))newSysDisplayName.value='';
+  newSysPassword.value='';
+  userModalMsg.textContent='';
+  await loadUsersHome();
+}
+function closeUserModal(){userModal.style.display='none'}
+async function loadUsersHome(){
+  if(!currentUser || currentUser.role!=='admin')return;
+  try{
+    const res=await authFetch('/api/users',{cache:'no-store'});
+    const data=await res.json().catch(()=>[]);
+    if(!res.ok)throw new Error(data.detail||'تعذر تحميل المستخدمين');
+    usersHomeList.innerHTML=(Array.isArray(data)?data:[]).map(u=>`
+      <div style="display:flex;justify-content:space-between;gap:10px;border:1px solid #e0e6ed;border-radius:10px;padding:10px;margin:7px 0;background:#fbfdff">
+        <span><b>${escapeHtmlPrivate(u.username||'')}</b></span>
+        <span>${u.role==='admin'?'إدارة':({'warehouse':'أمين مستودع','sales_rep':'مندوب','accountant':'محاسب'}[u.job_type]||'موظف')}</span>
+      </div>`).join('') || '<div style="padding:10px;color:#667085">لا يوجد مستخدمون.</div>';
+  }catch(e){
+    usersHomeList.innerHTML='<div style="padding:10px;color:#b42318">تعذر تحميل المستخدمين.</div>';
+  }
+}
+async function createUserFromHome(){
+  if(!currentUser || currentUser.role!=='admin')return;
+  const username=newSysUsername.value.trim();
+  const display_name=(document.getElementById('newSysDisplayName')?.value||username).trim()||username;
+  const password=newSysPassword.value;
+  const job_type=newSysRole.value;
+  if(!username){userModalMsg.textContent='❌ اكتب اسم المستخدم';return}
+  if(password.length<8){userModalMsg.textContent='❌ كلمة المرور 8 أحرف على الأقل';return}
+  userModalMsg.textContent='جاري إنشاء المستخدم...';
+  try{
+    const res=await authFetch('/api/users',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,display_name,password,role:'user',job_type})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(data.detail||'تعذر إنشاء المستخدم');
+    userModalMsg.textContent='✅ تم إنشاء المستخدم';
+    newSysUsername.value='';
+    if(document.getElementById('newSysDisplayName'))newSysDisplayName.value='';
+    newSysPassword.value='';
+    await loadUsersHome();
+  }catch(e){
+    userModalMsg.textContent='❌ '+e.message;
+  }
+}
+
 function applyRolePermissions(){
   const employee=currentUser && currentUser.role!=='admin';
   document.documentElement.classList.toggle('employee-mode',!!employee);
+  const addUserBtn=document.getElementById('addUserHomeBtn');
+  if(addUserBtn)addUserBtn.style.display=(currentUser&&currentUser.role==='admin')?'':'none';
   if(employee){
     document.documentElement.classList.add('mobile-device');
     document.querySelectorAll('nav button').forEach(b=>b.style.display='none');
