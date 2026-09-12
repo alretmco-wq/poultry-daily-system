@@ -65,6 +65,10 @@ def init_db():
           FOREIGN KEY(username) REFERENCES users(username)
         )
         """)
+        cols = [r["name"] for r in c.execute("PRAGMA table_info(users)").fetchall()]
+        if "job_type" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN job_type TEXT NOT NULL DEFAULT 'employee'")
+        c.execute("UPDATE users SET job_type='admin' WHERE role='admin' AND (job_type IS NULL OR job_type='employee')")
         existing = c.execute("SELECT username FROM users LIMIT 1").fetchone()
         if not existing:
             admin_password = os.getenv("DAILY_ADMIN_PASSWORD", "Poultry@2026")
@@ -89,6 +93,7 @@ class UserCreate(BaseModel):
     display_name: str
     password: str
     role: str = "user"
+    job_type: str = "employee"
 
 def current_user(request: Request):
     token = request.cookies.get(SESSION_COOKIE)
@@ -96,7 +101,7 @@ def current_user(request: Request):
         raise HTTPException(401, "login required")
     now = int(time.time())
     with conn() as c:
-        row = c.execute("""SELECT u.username,u.display_name,u.role,u.active,s.expires_at
+        row = c.execute("""SELECT u.username,u.display_name,u.role,u.job_type,u.active,s.expires_at
                            FROM sessions s JOIN users u ON u.username=s.username
                            WHERE s.token=?""", (token,)).fetchone()
         if not row or not row["active"] or row["expires_at"] < now:
@@ -125,7 +130,7 @@ def login(body: LoginBody, response: Response):
         c.execute("DELETE FROM sessions WHERE expires_at < ?", (int(time.time()),))
         c.execute("INSERT INTO sessions(token,username,expires_at) VALUES(?,?,?)", (token,row["username"],expires))
     response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax", max_age=SESSION_SECONDS, path="/")
-    return {"ok": True, "user": {"username": row["username"], "display_name": row["display_name"], "role": row["role"]}}
+    return {"ok": True, "user": {"username": row["username"], "display_name": row["display_name"], "role": row["role"], "job_type": row["job_type"]}}
 
 @app.post("/api/auth/logout")
 def logout(request: Request, response: Response):
@@ -138,7 +143,7 @@ def logout(request: Request, response: Response):
 
 @app.get("/api/auth/me")
 def me(user=Depends(current_user)):
-    return {"username":user["username"],"display_name":user["display_name"],"role":user["role"]}
+    return {"username":user["username"],"display_name":user["display_name"],"role":user["role"],"job_type":user.get("job_type","employee")}
 
 @app.post("/api/auth/change-password")
 def change_password(body: PasswordBody, user=Depends(current_user)):
@@ -155,18 +160,22 @@ def change_password(body: PasswordBody, user=Depends(current_user)):
 @app.get("/api/users")
 def list_users(admin=Depends(require_admin)):
     with conn() as c:
-        rows=c.execute("SELECT username,display_name,role,active,created_at FROM users ORDER BY username").fetchall()
+        rows=c.execute("SELECT username,display_name,role,job_type,active,created_at FROM users ORDER BY username").fetchall()
     return [dict(r) for r in rows]
 
 @app.post("/api/users")
 def create_user(body: UserCreate, admin=Depends(require_admin)):
     username=body.username.strip()
+    allowed_jobs=("warehouse","sales_rep","accountant","employee")
     if not username or len(body.password)<8 or body.role not in ("admin","user"):
         raise HTTPException(400,"بيانات المستخدم غير صالحة")
+    job_type = "admin" if body.role=="admin" else body.job_type
+    if body.role!="admin" and job_type not in allowed_jobs:
+        raise HTTPException(400,"نوع المستخدم غير صالح")
     try:
         with conn() as c:
-            c.execute("INSERT INTO users(username,display_name,password_hash,role,active,created_at) VALUES(?,?,?,?,1,?)",
-                      (username,body.display_name.strip() or username,hash_password(body.password),body.role,int(time.time())))
+            c.execute("INSERT INTO users(username,display_name,password_hash,role,job_type,active,created_at) VALUES(?,?,?,?,?,1,?)",
+                      (username,body.display_name.strip() or username,hash_password(body.password),body.role,job_type,int(time.time())))
     except sqlite3.IntegrityError:
         raise HTTPException(409,"اسم المستخدم موجود مسبقاً")
     return {"ok":True}
