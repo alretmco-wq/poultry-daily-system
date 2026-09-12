@@ -411,6 +411,13 @@ html.mobile-device #daily.view:not(.active){display:none!important;}
 html.mobile-device #mobileHome.view.active{display:block!important;}
 html.mobile-device #daily.view.active{display:block!important;}
 
+
+#dbSalesTable .db-filter-row th{padding:4px;background:#f7f9fc}
+#dbSalesTable .db-filter-row select{
+  width:100%;min-width:70px;padding:5px 3px;border:1px solid #c7cdd6;border-radius:4px;
+  background:#fff;font-size:12px;cursor:pointer
+}
+
 </style>
 <script>
 (function(){
@@ -491,7 +498,8 @@ html.mobile-device #daily.view.active{display:block!important;}
 <div class="rowadd"><button onclick="addExpense()">+ إضافة سطر</button></div></div>
 
 <div class="actions"><div class="attach"><b>إضافة صورة أو ملف (اختياري)</b> <span id="savedAttachmentMark" class="attachment-badge" style="display:none" title="يوجد مرفق محفوظ">📎</span><br><br><input id="files" type="file" multiple><div id="fileNames"></div></div>
-<div class="btns"><button class="blue" onclick="previewCurrentDaily()">معاينة اليومية</button><button class="green" onclick="saveDaily()">حفظ اليومية</button><button class="mobile-share" style="display:none" onclick="previewCurrentDaily();setTimeout(()=>printPreview(),250)">مشاركة / PDF</button><button onclick="newDaily()">يومية جديدة</button></div></div>
+<div class="btns"><button class="blue" onclick="previewCurrentDaily()">معاينة اليومية</button><button id="saveDailyBtn" class="green" onclick="saveDaily()">حفظ اليومية</button><button class="mobile-share" style="display:none" onclick="previewCurrentDaily();setTimeout(()=>printPreview(),250)">مشاركة / PDF</button><button onclick="newDaily()">يومية جديدة</button></div>
+<div id="saveStatus" style="display:none;margin-top:10px;padding:10px;border-radius:8px;text-align:center;font-weight:bold"></div></div>
 </div>
 
 <div id="database" class="view page"><div class="sec">قاعدة بيانات المبيعات — الجدول كامل + التاريخ والمندوب</div>
@@ -515,7 +523,18 @@ html.mobile-device #daily.view.active{display:block!important;}
 <th onclick="setSort('invoice')">رقم الفاتورة ↕</th>
 <th onclick="setSort('collection')">التحصيل ↕</th>
 <th onclick="setSort('customer')">العميل ↕</th>
-<th>اليومية</th></tr></thead><tbody id="dbBody"></tbody></table></div></div>
+<th>اليومية</th></tr>
+<tr class="db-filter-row">
+<th><select id="cfDate" onchange="renderDB()" title="فرز/تصفية التاريخ"><option value="">الكل ▼</option></select></th>
+<th><select id="cfRep" onchange="renderDB()" title="فرز/تصفية المندوب"><option value="">الكل ▼</option></select></th>
+<th><select id="cfItem" onchange="renderDB()" title="فرز/تصفية الصنف"><option value="">الكل ▼</option></select></th>
+<th><select id="cfQty" onchange="renderDB()" title="فرز/تصفية العدد"><option value="">الكل ▼</option></select></th>
+<th><select id="cfPrice" onchange="renderDB()" title="فرز/تصفية السعر"><option value="">الكل ▼</option></select></th>
+<th><select id="cfTotal" onchange="renderDB()" title="فرز/تصفية الإجمالي"><option value="">الكل ▼</option></select></th>
+<th><select id="cfInvoice" onchange="renderDB()" title="فرز/تصفية رقم الفاتورة"><option value="">الكل ▼</option></select></th>
+<th><select id="cfCollection" onchange="renderDB()" title="فرز/تصفية التحصيل"><option value="">الكل ▼</option></select></th>
+<th><select id="cfCustomer" onchange="renderDB()" title="فرز/تصفية العميل"><option value="">الكل ▼</option></select></th>
+<th></th></tr></thead><tbody id="dbBody"></tbody></table></div></div>
 
 <div id="archive" class="view page"><div class="sec">أرشيف اليوميات ومرفقات كل يوم</div>
 <div class="toolbar">
@@ -603,18 +622,36 @@ async function syncFromServer(){
     if(!res.ok)throw new Error('server');
     const db=await res.json();
     localStorage.setItem(KEY,JSON.stringify(db));
+    serverMode=true;
     renderHome();renderArchive();renderDB();
+    return db;
   }catch(e){
     serverMode=false;
     console.warn('تعذر الاتصال بالخادم، تم استخدام النسخة المحلية مؤقتاً');
+    throw e;
   }
 }
 async function syncRecordToServer(rec){
-  if(!serverMode || !rec || !rec.id || rec.id==='__CURRENT_PREVIEW__')return;
+  if(!rec || !rec.id || rec.id==='__CURRENT_PREVIEW__')throw new Error('بيانات اليومية غير صالحة للحفظ');
   const res=await authFetch('/api/dailies/'+encodeURIComponent(rec.id),{
-    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:rec})
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({data:rec})
   });
-  if(!res.ok)throw new Error('تعذر حفظ اليومية في قاعدة البيانات');
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.detail||'تعذر حفظ اليومية في قاعدة البيانات');
+  serverMode=true;
+  return data;
+}
+async function verifyDailySavedOnServer(id){
+  const res=await authFetch('/api/dailies',{cache:'no-store'});
+  const db=await res.json().catch(()=>[]);
+  if(!res.ok || !Array.isArray(db))throw new Error('تعذر التحقق من الأرشيف على الخادم');
+  const found=db.some(r=>String(r.id)===String(id));
+  if(!found)throw new Error('لم تظهر اليومية في الأرشيف بعد الحفظ');
+  localStorage.setItem(KEY,JSON.stringify(db));
+  serverMode=true;
+  return db;
 }
 
 let saveLocked=false;
@@ -815,65 +852,99 @@ function fileData(){
   })));
 }
 async function saveDaily(){
-  if(saveLocked){
-    alert('تم حفظ هذه اليومية بالفعل. إذا عدلت أي بيانات يمكنك حفظ التحديث.');
-    return;
-  }
-  if(!date.value){
-    alert('أدخل تاريخ اليومية قبل الحفظ.');
-    date.focus();
-    return;
-  }
-  if(!rep.value.trim()){
-    alert('أدخل اسم المندوب قبل الحفظ.');
-    rep.focus();
-    return;
-  }
+  const status=document.getElementById('saveStatus');
+  const saveBtn=document.getElementById('saveDailyBtn');
+  const dateEl=document.getElementById('date');
+  const repEl=document.getElementById('rep');
+  const dayEl=document.getElementById('day');
+  const openEl=document.getElementById('openAmount');
+  const closeEl=document.getElementById('closeAmount');
+  const filesEl=document.getElementById('files');
 
-  let attachments=await fileData();
-  let db=JSON.parse(localStorage.getItem(KEY)||'[]');
-  let id=editingId||('Y-'+date.value+'-'+String(Date.now()).slice(-5));
-  let old=db.find(x=>String(x.id)===String(id));
-  let now=new Date().toISOString();
-
-  let rec={
-    id,
-    date:date.value,
-    day:day.value,
-    rep:rep.value,
-    openAmount:openAmount.value,
-    closeAmount:closeAmount.value,
-    movement:movementData(),
-    sales:tableData('sales'),
-    expenses:tableData('expenses'),
-    attachments:[...(old?.attachments||[]),...attachments],
-    createdAt:old?.createdAt||old?.savedAt||now,
-    savedAt:now
+  const setStatus=(msg,ok)=>{
+    if(!status)return;
+    status.style.display='block';
+    status.style.background=ok?'#eaf9ef':'#fff2f2';
+    status.style.color=ok?'#087a3e':'#b42318';
+    status.textContent=msg;
   };
 
-  let ix=db.findIndex(x=>String(x.id)===String(id));
-  let wasUpdate=ix>=0;
-  if(wasUpdate)db[ix]=rec; else db.push(rec);
-  localStorage.setItem(KEY,JSON.stringify(db));
-  try{await syncRecordToServer(rec);}catch(e){alert('تم الحفظ محلياً لكن تعذر الحفظ في قاعدة البيانات على الخادم.');return;}
+  if(saveLocked){
+    setStatus('هذه اليومية محفوظة بالفعل. عدّل أي خانة إذا أردت حفظ تحديث جديد.',true);
+    return;
+  }
+  if(!dateEl || !dateEl.value){
+    setStatus('أدخل تاريخ اليومية قبل الحفظ.',false);
+    dateEl?.focus();
+    return;
+  }
+  if(!repEl || !repEl.value.trim()){
+    setStatus('أدخل اسم المندوب قبل الحفظ.',false);
+    repEl?.focus();
+    return;
+  }
 
-  editingId=id;
-  saveLocked=true;
-  dailyDirty=false;
-  files.value='';
-  savedAttachmentMark.style.display=(rec.attachments||[]).length?'inline-block':'none';
-  renderSavedAttachments(rec);
-  renderHome();
-  if(isMobileUI())renderMobileHome();
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='جاري الحفظ...';}
+  setStatus('جاري حفظ اليومية والتحقق من ظهورها في الأرشيف...',true);
 
-  alert(wasUpdate
-    ? 'تم تحديث نفس اليومية وتسجيل تاريخ ووقت التحديث'
-    : 'تم حفظ اليومية في قاعدة البيانات والأرشيف');
+  try{
+    const attachments=await fileData();
+    let db=JSON.parse(localStorage.getItem(KEY)||'[]');
+    let id=editingId||('Y-'+dateEl.value+'-'+String(Date.now()).slice(-5));
+    let old=db.find(x=>String(x.id)===String(id));
+    let now=new Date().toISOString();
+
+    let rec={
+      id,
+      date:dateEl.value,
+      day:dayEl?.value||'',
+      rep:repEl.value.trim(),
+      openAmount:openEl?.value||'',
+      closeAmount:closeEl?.value||'',
+      movement:movementData(),
+      sales:tableData('sales'),
+      expenses:tableData('expenses'),
+      attachments:[...(old?.attachments||[]),...attachments],
+      createdAt:old?.createdAt||old?.savedAt||now,
+      savedAt:now
+    };
+
+    // الحفظ الرسمي أولاً على الخادم؛ لا نعلن النجاح قبل استلام تأكيد الخادم.
+    await syncRecordToServer(rec);
+
+    // تحقق مستقل: يجب أن ترجع اليومية من /api/dailies وتظهر فعلياً في الأرشيف.
+    const serverDb=await verifyDailySavedOnServer(id);
+    const savedRec=serverDb.find(x=>String(x.id)===String(id))||rec;
+    const wasUpdate=!!old;
+
+    editingId=id;
+    saveLocked=true;
+    dailyDirty=false;
+    if(filesEl)filesEl.value='';
+    savedAttachmentMark.style.display=(savedRec.attachments||[]).length?'inline-block':'none';
+    renderSavedAttachments(savedRec);
+    renderHome();
+    renderArchive();
+    renderDB();
+    if(isMobileUI())renderMobileHome();
+
+    setStatus(wasUpdate
+      ? '✅ تم تحديث اليومية وظهرت في الأرشيف.'
+      : '✅ تم حفظ اليومية وظهرت في الأرشيف بنجاح.',true);
+  }catch(e){
+    saveLocked=false;
+    const msg=(e&&e.message)?e.message:'تعذر حفظ اليومية على الخادم';
+    setStatus('❌ لم يتم الحفظ الرسمي: '+msg,false);
+  }finally{
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='حفظ اليومية';}
+  }
 }
 function newDaily(){
   editingId=null;
   saveLocked=false;
   dailyDirty=false;
+  const saveStatusEl=document.getElementById('saveStatus');
+  if(saveStatusEl){saveStatusEl.style.display='none';saveStatusEl.textContent='';}
   show('daily');
 
   // Reset header
@@ -954,9 +1025,43 @@ function setSort(key){
   renderDB();
 }
 function clearDBFilters(){
-  ['q','fRep','fCustomer','fInvoice','fItem','from','to'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''});
+  ['q','fRep','fCustomer','fInvoice','fItem','from','to',
+   'cfDate','cfRep','cfItem','cfQty','cfPrice','cfTotal','cfInvoice','cfCollection','cfCustomer']
+   .forEach(id=>{let e=document.getElementById(id);if(e)e.value=''});
   renderDB();
 }
+
+function rawSalesRowsForDB(){
+  let db=JSON.parse(localStorage.getItem(KEY)||'[]'), rows=[];
+  db.forEach(r=>(r.sales||[]).forEach(s=>{
+    if(!meaningfulSalesRow(s))return;
+    rows.push({
+      id:r.id,date:r.date||'',rep:r.rep||'',line:rows.length,item:s[0]||'',qty:s[1]||'',price:s[2]||'',
+      total:s[3]||'',invoice:s[4]||'',collection:s[5]||'',customer:s[6]||''
+    });
+  }));
+  return rows;
+}
+function updateDBColumnFilterOptions(){
+  const rows=rawSalesRowsForDB();
+  const defs=[
+    ['cfDate','date'],['cfRep','rep'],['cfItem','item'],['cfQty','qty'],['cfPrice','price'],
+    ['cfTotal','total'],['cfInvoice','invoice'],['cfCollection','collection'],['cfCustomer','customer']
+  ];
+  defs.forEach(([id,key])=>{
+    const el=document.getElementById(id); if(!el)return;
+    const current=el.value;
+    let vals=[...new Set(rows.map(r=>String(r[key]??'')).filter(v=>v!==''))];
+    if(['qty','price','total','collection'].includes(key)) vals.sort((a,b)=>num(a)-num(b));
+    else vals.sort((a,b)=>String(a).localeCompare(String(b),'ar',{numeric:true}));
+    el.innerHTML='<option value="">الكل ▼</option>'+vals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    if(vals.includes(current))el.value=current;
+  });
+}
+function escapeHtml(v){
+  return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function salesRows(){
   let db=JSON.parse(localStorage.getItem(KEY)||'[]'), rows=[];
   db.forEach(r=>(r.sales||[]).forEach(s=>{
@@ -975,7 +1080,16 @@ function salesRows(){
     (!customer||x.customer.toLowerCase().includes(customer))&&
     (!invoice||String(x.invoice).toLowerCase().includes(invoice))&&
     (!item||x.item.toLowerCase().includes(item))&&
-    (!general||Object.values(x).join(' ').toLowerCase().includes(general))
+    (!general||Object.values(x).join(' ').toLowerCase().includes(general))&&
+    (!document.getElementById('cfDate')?.value||String(x.date)===document.getElementById('cfDate').value)&&
+    (!document.getElementById('cfRep')?.value||String(x.rep)===document.getElementById('cfRep').value)&&
+    (!document.getElementById('cfItem')?.value||String(x.item)===document.getElementById('cfItem').value)&&
+    (!document.getElementById('cfQty')?.value||String(x.qty)===document.getElementById('cfQty').value)&&
+    (!document.getElementById('cfPrice')?.value||String(x.price)===document.getElementById('cfPrice').value)&&
+    (!document.getElementById('cfTotal')?.value||String(x.total)===document.getElementById('cfTotal').value)&&
+    (!document.getElementById('cfInvoice')?.value||String(x.invoice)===document.getElementById('cfInvoice').value)&&
+    (!document.getElementById('cfCollection')?.value||String(x.collection)===document.getElementById('cfCollection').value)&&
+    (!document.getElementById('cfCustomer')?.value||String(x.customer)===document.getElementById('cfCustomer').value)
   );
   rows.sort((a,b)=>{
     let av=a[dbSort.key],bv=b[dbSort.key];
@@ -985,6 +1099,7 @@ function salesRows(){
   return rows;
 }
 function renderDB(){
+  updateDBColumnFilterOptions();
   let rows=salesRows();
   dbBody.innerHTML=rows.map(x=>`<tr>
     <td>${x.date}</td><td>${x.rep}</td><td>${x.item}</td><td>${x.qty}</td><td>${x.price}</td>
